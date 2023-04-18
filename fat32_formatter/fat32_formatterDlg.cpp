@@ -59,12 +59,18 @@ Cfat32formatterDlg::Cfat32formatterDlg(CWnd* pParent /*=nullptr*/)
 void Cfat32formatterDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_ReadDisk, ReadDisk);
+	DDX_Control(pDX, IDC_COMBO_ClUSTER_SIZE, ClusterSizeCheckbox);
+	DDX_Control(pDX, IDC_COMBO2, FileSystemCheckbox);
 }
 
 BEGIN_MESSAGE_MAP(Cfat32formatterDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_ReadDisk, &Cfat32formatterDlg::OnBnClickedReaddisk)
+	ON_CBN_SELCHANGE(IDC_COMBO_ClUSTER_SIZE, &Cfat32formatterDlg::OnCbnSelchangeComboClusterSize)
+
 END_MESSAGE_MAP()
 
 
@@ -100,6 +106,14 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
+	ClusterSizeCheckbox.AddString(_T("512 Bytes"));
+	ClusterSizeCheckbox.AddString(_T("1024 Bytes"));
+	ClusterSizeCheckbox.AddString(_T("2048 Bytes"));
+	ClusterSizeCheckbox.AddString(_T("4096 Bytes"));
+	ClusterSizeCheckbox.AddString(_T("8192 Bytes"));
+	ClusterSizeCheckbox.AddString(_T("16384 Bytes"));
+	FileSystemCheckbox.AddString(_T("FAT32"));
+	FileSystemCheckbox.AddString(_T("exFAT"));
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -152,4 +166,19 @@ HCURSOR Cfat32formatterDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
+
+
+
+void Cfat32formatterDlg::OnBnClickedReaddisk()
+{
+	return;
+}
+
+
+void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
+{
+
+
+}
+
 

@@ -31,4 +31,10 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+public:
+	CButton ReadDisk;
+	afx_msg void OnBnClickedReaddisk();
+	afx_msg void OnCbnSelchangeComboClusterSize();
+	CComboBox ClusterSizeCheckbox;
+	CComboBox FileSystemCheckbox;
 };
