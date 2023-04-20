@@ -37,4 +37,5 @@ public:
 	afx_msg void OnCbnSelchangeComboClusterSize();
 	CComboBox ClusterSizeCheckbox;
 	CComboBox FileSystemCheckbox;
+	afx_msg void OnBnClickedButtonShowConfig();
 };

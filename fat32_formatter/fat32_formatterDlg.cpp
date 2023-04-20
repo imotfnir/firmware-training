@@ -71,6 +71,7 @@ BEGIN_MESSAGE_MAP(Cfat32formatterDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_ReadDisk, &Cfat32formatterDlg::OnBnClickedReaddisk)
 	ON_CBN_SELCHANGE(IDC_COMBO_ClUSTER_SIZE, &Cfat32formatterDlg::OnCbnSelchangeComboClusterSize)
 
+	ON_BN_CLICKED(IDC_BUTTON_SHOW_CONFIG, &Cfat32formatterDlg::OnBnClickedButtonShowConfig)
 END_MESSAGE_MAP()
 
 
@@ -168,9 +169,9 @@ HCURSOR Cfat32formatterDlg::OnQueryDragIcon()
 }
 
 
-
 void Cfat32formatterDlg::OnBnClickedReaddisk()
 {
+
 	return;
 }
 
@@ -178,7 +179,11 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
 {
 
-
 }
 
-
+void Cfat32formatterDlg::OnBnClickedButtonShowConfig()
+{
+	CEdit* pEditCtrl = (CEdit*)GetDlgItem(IDC_STATIC_DISK_DATA);
+	pEditCtrl->SetWindowText(_T("New text for the edit control"));
+	return;
+}
