@@ -8,6 +8,8 @@
 #include "fat32_formatterDlg.h"
 #include "afxdialogex.h"
 
+#include <sstream>
+
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
@@ -59,9 +61,9 @@ Cfat32formatterDlg::Cfat32formatterDlg(CWnd* pParent /*=nullptr*/)
 void Cfat32formatterDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_ReadDisk, ReadDisk);
-	DDX_Control(pDX, IDC_COMBO_ClUSTER_SIZE, ClusterSizeCheckbox);
-	DDX_Control(pDX, IDC_COMBO2, FileSystemCheckbox);
+	DDX_Control(pDX, IDC_ReadDisk, readDiskButton);
+	DDX_Control(pDX, IDC_COMBO_ClUSTER_SIZE, custerSizeCheckbox);
+	DDX_Control(pDX, IDC_COMBO2, fileSystemCheckbox);
 }
 
 BEGIN_MESSAGE_MAP(Cfat32formatterDlg, CDialogEx)
@@ -107,14 +109,15 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	// TODO: Add extra initialization here
-	ClusterSizeCheckbox.AddString(_T("512 Bytes"));
-	ClusterSizeCheckbox.AddString(_T("1024 Bytes"));
-	ClusterSizeCheckbox.AddString(_T("2048 Bytes"));
-	ClusterSizeCheckbox.AddString(_T("4096 Bytes"));
-	ClusterSizeCheckbox.AddString(_T("8192 Bytes"));
-	ClusterSizeCheckbox.AddString(_T("16384 Bytes"));
-	FileSystemCheckbox.AddString(_T("FAT32"));
-	FileSystemCheckbox.AddString(_T("exFAT"));
+	
+	custerSizeCheckbox.AddString(_T("512 Bytes"));
+	custerSizeCheckbox.AddString(_T("1024 Bytes"));
+	custerSizeCheckbox.AddString(_T("2048 Bytes"));
+	custerSizeCheckbox.AddString(_T("4096 Bytes"));
+	custerSizeCheckbox.AddString(_T("8192 Bytes"));
+	custerSizeCheckbox.AddString(_T("16384 Bytes"));
+	fileSystemCheckbox.AddString(_T("FAT32"));
+	fileSystemCheckbox.AddString(_T("exFAT"));
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -184,6 +187,9 @@ void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
 void Cfat32formatterDlg::OnBnClickedButtonShowConfig()
 {
 	CEdit* pEditCtrl = (CEdit*)GetDlgItem(IDC_STATIC_DISK_DATA);
-	pEditCtrl->SetWindowText(_T("New text for the edit control"));
+	CString strText;
+	strText.Format(_T("%d test string"), fileSystemConfig.clusterSizeInByte);
+	pEditCtrl->SetWindowText(strText);
+
 	return;
 }

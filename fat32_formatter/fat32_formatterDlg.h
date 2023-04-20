@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "CFileSystemConfig.h"
 
 // Cfat32formatterDlg dialog
 class Cfat32formatterDlg : public CDialogEx
@@ -32,10 +33,11 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	CButton ReadDisk;
 	afx_msg void OnBnClickedReaddisk();
 	afx_msg void OnCbnSelchangeComboClusterSize();
-	CComboBox ClusterSizeCheckbox;
-	CComboBox FileSystemCheckbox;
 	afx_msg void OnBnClickedButtonShowConfig();
+	CButton readDiskButton;
+	CComboBox custerSizeCheckbox;
+	CComboBox fileSystemCheckbox;
+	CFileSystemConfig fileSystemConfig;
 };
