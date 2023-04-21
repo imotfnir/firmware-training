@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "CFileSystemConfig.h"
 
 // Cfat32formatterDlg dialog
 class Cfat32formatterDlg : public CDialogEx

@@ -1,11 +1,13 @@
 //  need to include WinDDK in project
 #pragma once
-#include "StdAfx.h"
+
+#include "scsi.h"
+
+#include "pch.h"
 #include <WinIoCtl.h>
 #include "devioctl.h"
 #include <ntddscsi.h>
 #include <Windows.h>
-#include "SCSI.h"
 
 typedef struct _SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE
 {
@@ -31,6 +33,7 @@ typedef struct _SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE
 //              other: windows errorcode
 
 DWORD ScsiCmdSend(HANDLE hDev, _stCDB stCDB, BYTE bDirection, BYTE bCdbLen, void *pData, DWORD dwDataXferLen, DWORD dwTimeout);
+BOOL scsi_read(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize);
 
 DWORD ScsiCmdSend(HANDLE hDev, _stCDB stCDB, BYTE bDirection, BYTE bCdbLen, void *pData, DWORD dwDataXferLen, DWORD dwTimeout)
 {
@@ -66,4 +69,9 @@ DWORD ScsiCmdSend(HANDLE hDev, _stCDB stCDB, BYTE bDirection, BYTE bCdbLen, void
 		return 0;
 
 	return GetLastError();
+}
+
+BOOL scsi_read(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize) {
+	
+	return true;
 }

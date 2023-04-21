@@ -9,5 +9,7 @@
 
 // 請於此新增您要先行編譯的標頭
 #include "framework.h"
+#include "scsi.h"
+#include "CFileSystemConfig.h"
 
 #endif //PCH_H

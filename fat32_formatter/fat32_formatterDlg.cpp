@@ -2,6 +2,7 @@
 // fat32_formatterDlg.cpp : implementation file
 //
 
+
 #include "pch.h"
 #include "framework.h"
 #include "fat32_formatter.h"
@@ -9,7 +10,6 @@
 #include "afxdialogex.h"
 
 #include <Windows.h>
-
 #include <sstream>
 
 #ifdef _DEBUG
@@ -179,7 +179,27 @@ HCURSOR Cfat32formatterDlg::OnQueryDragIcon()
 
 void Cfat32formatterDlg::OnBnClickedReaddisk()
 {
+	BYTE* readBuffer = (BYTE*)malloc(SECTOR_SIZE);
 
+	HANDLE storageDevice = CreateFile(
+		L"\\\\.\\E:",
+		(GENERIC_READ | GENERIC_WRITE),
+		(FILE_SHARE_READ | FILE_SHARE_WRITE),
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL
+	);
+	if (storageDevice == INVALID_HANDLE_VALUE) {
+		TRACE(_T("Failed to open drive\n"));
+		return;
+	}
+
+	scsi_read(storageDevice, readBuffer, 0, 1);
+	for (size_t i = 0; i < SECTOR_SIZE; i++)
+	{
+		TRACE(_T("0x%X \n"), readBuffer[i]);
+	}
 	return;
 }
 
