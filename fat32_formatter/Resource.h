@@ -21,7 +21,6 @@
 #define IDC_EDIT2                       1014
 #define IDC_EDIT_PARTITION_OFFSET       1014
 #define IDC_STATIC_DISK_DATA            1016
-#define IDC_BUTTON1                     1017
 #define IDC_BUTTON_SHOW_CONFIG          1017
 
 // Next default values for new objects

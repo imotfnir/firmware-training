@@ -11,7 +11,7 @@ public:
 	CFileSystemConfig();
 
 public:
-	BOOL isMBR;
+	UINT isMBR;
 	UINT clusterSizeInByte;
 	FILE_SYSTEM_TYPE fileSystem;
 	UINT offsetOfFatTableInByte;

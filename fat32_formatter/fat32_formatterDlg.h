@@ -37,7 +37,13 @@ public:
 	afx_msg void OnCbnSelchangeComboClusterSize();
 	afx_msg void OnBnClickedButtonShowConfig();
 	CButton readDiskButton;
-	CComboBox custerSizeCheckbox;
-	CComboBox fileSystemCheckbox;
+	CButton mbrCheckBox;
+	CComboBox custerSizeComboBox;
+	CComboBox fileSystemComboBox;
+	CEdit fatOffset;
+	CEdit partitionOffset;
 	CFileSystemConfig fileSystemConfig;
+	afx_msg void OnEnChangeEditFatOffset();
+	afx_msg void OnEnChangeEditPartitionOffset();
+	afx_msg void OnBnClickedCheckMbr();
 };

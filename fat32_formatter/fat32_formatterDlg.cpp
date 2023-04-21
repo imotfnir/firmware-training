@@ -8,12 +8,13 @@
 #include "fat32_formatterDlg.h"
 #include "afxdialogex.h"
 
+#include <Windows.h>
+
 #include <sstream>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
 
 // CAboutDlg dialog used for App About
 
@@ -24,13 +25,16 @@ public:
 
 // Dialog Data
 #ifdef AFX_DESIGN_TIME
-	enum { IDD = IDD_ABOUTBOX };
+	enum
+	{
+		IDD = IDD_ABOUTBOX
+	};
 #endif
 
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+protected:
+	virtual void DoDataExchange(CDataExchange *pDX); // DDX/DDV support
 
-// Implementation
+	// Implementation
 protected:
 	DECLARE_MESSAGE_MAP()
 };
@@ -39,7 +43,7 @@ CAboutDlg::CAboutDlg() : CDialogEx(IDD_ABOUTBOX)
 {
 }
 
-void CAboutDlg::DoDataExchange(CDataExchange* pDX)
+void CAboutDlg::DoDataExchange(CDataExchange *pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 }
@@ -47,35 +51,37 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 END_MESSAGE_MAP()
 
-
 // Cfat32formatterDlg dialog
 
-
-
-Cfat32formatterDlg::Cfat32formatterDlg(CWnd* pParent /*=nullptr*/)
+Cfat32formatterDlg::Cfat32formatterDlg(CWnd *pParent /*=nullptr*/)
 	: CDialogEx(IDD_FAT32_FORMATTER_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
-void Cfat32formatterDlg::DoDataExchange(CDataExchange* pDX)
+void Cfat32formatterDlg::DoDataExchange(CDataExchange *pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_ReadDisk, readDiskButton);
-	DDX_Control(pDX, IDC_COMBO_ClUSTER_SIZE, custerSizeCheckbox);
-	DDX_Control(pDX, IDC_COMBO2, fileSystemCheckbox);
+	DDX_Control(pDX, IDC_COMBO_ClUSTER_SIZE, custerSizeComboBox);
+	DDX_Control(pDX, IDC_COMBO2, fileSystemComboBox);
+	DDX_Control(pDX, IDC_EDIT_FAT_OFFSET, fatOffset);
+	DDX_Control(pDX, IDC_EDIT_PARTITION_OFFSET, partitionOffset);
+	DDX_Control(pDX, IDC_CHECK_MBR, mbrCheckBox);
 }
 
 BEGIN_MESSAGE_MAP(Cfat32formatterDlg, CDialogEx)
-	ON_WM_SYSCOMMAND()
-	ON_WM_PAINT()
-	ON_WM_QUERYDRAGICON()
-	ON_BN_CLICKED(IDC_ReadDisk, &Cfat32formatterDlg::OnBnClickedReaddisk)
-	ON_CBN_SELCHANGE(IDC_COMBO_ClUSTER_SIZE, &Cfat32formatterDlg::OnCbnSelchangeComboClusterSize)
+ON_WM_SYSCOMMAND()
+ON_WM_PAINT()
+ON_WM_QUERYDRAGICON()
+ON_BN_CLICKED(IDC_ReadDisk, &Cfat32formatterDlg::OnBnClickedReaddisk)
+ON_CBN_SELCHANGE(IDC_COMBO_ClUSTER_SIZE, &Cfat32formatterDlg::OnCbnSelchangeComboClusterSize)
 
-	ON_BN_CLICKED(IDC_BUTTON_SHOW_CONFIG, &Cfat32formatterDlg::OnBnClickedButtonShowConfig)
+ON_BN_CLICKED(IDC_BUTTON_SHOW_CONFIG, &Cfat32formatterDlg::OnBnClickedButtonShowConfig)
+ON_EN_CHANGE(IDC_EDIT_FAT_OFFSET, &Cfat32formatterDlg::OnEnChangeEditFatOffset)
+ON_EN_CHANGE(IDC_EDIT_PARTITION_OFFSET, &Cfat32formatterDlg::OnEnChangeEditPartitionOffset)
+ON_BN_CLICKED(IDC_CHECK_MBR, &Cfat32formatterDlg::OnBnClickedCheckMbr)
 END_MESSAGE_MAP()
-
 
 // Cfat32formatterDlg message handlers
 
@@ -89,7 +95,7 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
 	ASSERT(IDM_ABOUTBOX < 0xF000);
 
-	CMenu* pSysMenu = GetSystemMenu(FALSE);
+	CMenu *pSysMenu = GetSystemMenu(FALSE);
 	if (pSysMenu != nullptr)
 	{
 		BOOL bNameValid;
@@ -105,21 +111,21 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 
 	// Set the icon for this dialog.  The framework does this automatically
 	//  when the application's main window is not a dialog
-	SetIcon(m_hIcon, TRUE);			// Set big icon
-	SetIcon(m_hIcon, FALSE);		// Set small icon
+	SetIcon(m_hIcon, TRUE);	 // Set big icon
+	SetIcon(m_hIcon, FALSE); // Set small icon
 
 	// TODO: Add extra initialization here
-	
-	custerSizeCheckbox.AddString(_T("512 Bytes"));
-	custerSizeCheckbox.AddString(_T("1024 Bytes"));
-	custerSizeCheckbox.AddString(_T("2048 Bytes"));
-	custerSizeCheckbox.AddString(_T("4096 Bytes"));
-	custerSizeCheckbox.AddString(_T("8192 Bytes"));
-	custerSizeCheckbox.AddString(_T("16384 Bytes"));
-	fileSystemCheckbox.AddString(_T("FAT32"));
-	fileSystemCheckbox.AddString(_T("exFAT"));
 
-	return TRUE;  // return TRUE  unless you set the focus to a control
+	custerSizeComboBox.AddString(_T("512 Bytes"));
+	custerSizeComboBox.AddString(_T("1024 Bytes"));
+	custerSizeComboBox.AddString(_T("2048 Bytes"));
+	custerSizeComboBox.AddString(_T("4096 Bytes"));
+	custerSizeComboBox.AddString(_T("8192 Bytes"));
+	custerSizeComboBox.AddString(_T("16384 Bytes"));
+	fileSystemComboBox.AddString(_T("FAT32"));
+	fileSystemComboBox.AddString(_T("exFAT"));
+
+	return TRUE; // return TRUE  unless you set the focus to a control
 }
 
 void Cfat32formatterDlg::OnSysCommand(UINT nID, LPARAM lParam)
@@ -171,25 +177,56 @@ HCURSOR Cfat32formatterDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
 void Cfat32formatterDlg::OnBnClickedReaddisk()
 {
 
 	return;
 }
 
-
 void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
 {
-
+	CString value;
+	custerSizeComboBox.GetLBText(custerSizeComboBox.GetCurSel(), value);
+	fileSystemConfig.clusterSizeInByte = _ttoi(value);
 }
 
 void Cfat32formatterDlg::OnBnClickedButtonShowConfig()
 {
-	CEdit* pEditCtrl = (CEdit*)GetDlgItem(IDC_STATIC_DISK_DATA);
+	CEdit *pEditCtrl = (CEdit *)GetDlgItem(IDC_STATIC_DISK_DATA);
 	CString strText;
-	strText.Format(_T("%d test string"), fileSystemConfig.clusterSizeInByte);
+	strText.Format(_T("Have MBR: %d\n\
+Cluster Size: %d Bytes\n\
+Offset of FAT Table : % d Bytes\n\
+Offset of partition : %d Bytes\n"),
+fileSystemConfig.isMBR,
+fileSystemConfig.clusterSizeInByte,
+fileSystemConfig.offsetOfFatTableInByte,
+fileSystemConfig.offsetOfPartitionInByte);
+	TRACE(_T("trace code %d \n"), fileSystemConfig.isMBR);
 	pEditCtrl->SetWindowText(strText);
-
 	return;
+}
+
+void Cfat32formatterDlg::OnEnChangeEditFatOffset()
+{
+	CString value;
+	fatOffset.GetWindowText(value);
+	fileSystemConfig.offsetOfFatTableInByte = _ttoi(value);
+}
+
+void Cfat32formatterDlg::OnEnChangeEditPartitionOffset()
+{
+	CString value;
+	partitionOffset.GetWindowText(value);
+	fileSystemConfig.offsetOfPartitionInByte = _ttoi(value);
+}
+
+void Cfat32formatterDlg::OnBnClickedCheckMbr()
+{
+	if (mbrCheckBox.GetCheck())
+	{
+		fileSystemConfig.isMBR = true;
+		return;
+	}
+	fileSystemConfig.isMBR = false;
 }
