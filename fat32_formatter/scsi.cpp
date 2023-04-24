@@ -72,6 +72,42 @@ DWORD ScsiCmdSend(HANDLE hDev, _stCDB stCDB, BYTE bDirection, BYTE bCdbLen, void
 }
 
 BOOL scsi_read(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize) {
-	
-	return true;
+	BOOL apiStatus = FALSE;
+	BYTE abRequestSense[32] = { 0 };
+	DWORD byteReturn;
+	SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE sptd = { 0 };
+
+	sptd.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
+	sptd.sptd.PathId = 0;
+	sptd.sptd.TargetId = 1;
+	sptd.sptd.Lun = 0;
+	sptd.sptd.CdbLength = 10;
+	sptd.sptd.DataIn = SCSI_IOCTL_DATA_IN;
+	sptd.sptd.SenseInfoLength = 24;
+	sptd.sptd.DataTransferLength = 0x200;
+	sptd.sptd.TimeOutValue = 2;
+	sptd.sptd.DataBuffer = readBuffer;
+	sptd.sptd.SenseInfoOffset = offsetof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE, abRequestSense);
+
+	sptd.sptd.Cdb[0] = 0x28;        //opcode: Host read data from storage device
+	sptd.sptd.Cdb[1] = 0x00;
+	sptd.sptd.Cdb[2] = (offsetSector >> 24) & 0xff;
+	sptd.sptd.Cdb[3] = (offsetSector >> 16) & 0xff;
+	sptd.sptd.Cdb[4] = (offsetSector >> 8) & 0xff;
+	sptd.sptd.Cdb[5] = offsetSector & 0xff;
+	sptd.sptd.Cdb[6] = 0x00;
+	sptd.sptd.Cdb[7] = (readSize >> 8) & 0xff;
+	sptd.sptd.Cdb[8] = readSize & 0xff;
+	sptd.sptd.Cdb[9] = 0x00;
+
+	apiStatus = DeviceIoControl(dev,
+		IOCTL_SCSI_PASS_THROUGH_DIRECT,
+		&sptd,
+		sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE),
+		&sptd,
+		sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE),
+		&byteReturn,
+		FALSE);
+
+	return apiStatus;
 }

@@ -206,7 +206,7 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
 {
 	CString value;
-	custerSizeComboBox.GetLBText(custerSizeComboBox.GetCurSel(), value);
+	custerSizeComboBox.GetLBText(custerSizeComboBox.GetCurSel(), value); 
 	fileSystemConfig.clusterSizeInByte = _ttoi(value);
 }
 
