@@ -195,8 +195,8 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 		return;
 	}
 
-	scsi_read(storageDevice, readBuffer, 0, 1);
-	for (size_t i = 0; i < SECTOR_SIZE; i++)
+	ScsiRead(storageDevice, readBuffer, 0, 1);
+	for (size_t i = 0; i < SECTOR_SIZE * 1; i++)
 	{
 		TRACE(_T("0x%X \n"), readBuffer[i]);
 	}

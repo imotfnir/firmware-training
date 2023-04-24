@@ -32,82 +32,56 @@ typedef struct _SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE
 //  return      0: no error
 //              other: windows errorcode
 
-DWORD ScsiCmdSend(HANDLE hDev, _stCDB stCDB, BYTE bDirection, BYTE bCdbLen, void *pData, DWORD dwDataXferLen, DWORD dwTimeout);
-BOOL scsi_read(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize);
+DWORD ScsiCmdSend(HANDLE dev, _stCDB cdb, BYTE direction, BYTE cdbLen, void *data, DWORD dataXferLen, DWORD timeoutSecond);
 
-DWORD ScsiCmdSend(HANDLE hDev, _stCDB stCDB, BYTE bDirection, BYTE bCdbLen, void *pData, DWORD dwDataXferLen, DWORD dwTimeout)
+DWORD ScsiCmdSend(HANDLE dev, _stCDB cdb, BYTE direction, BYTE cdbLen, void *data, DWORD dataXferLen, DWORD timeoutSecond)
 {
-	BOOL xAPIStatus = FALSE;
+	BOOL apiStatus = FALSE;
 	BYTE abRequestSense[32] = {0};
-	DWORD dwByteReturn;
+	DWORD byteReturn;
 
 	SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE sptd = {0};
 	sptd.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
 	sptd.sptd.PathId = 0;
 	sptd.sptd.TargetId = 1;
 	sptd.sptd.Lun = 0;
-	sptd.sptd.CdbLength = bCdbLen;
-	sptd.sptd.DataIn = (BYTE)bDirection;
+	sptd.sptd.CdbLength = cdbLen;
+	sptd.sptd.DataIn = (BYTE)direction;
 	sptd.sptd.SenseInfoLength = sizeof(sptd.abRequestSense);
-	sptd.sptd.DataTransferLength = dwDataXferLen;
-	sptd.sptd.TimeOutValue = dwTimeout;
-	sptd.sptd.DataBuffer = (pData == NULL) ? abRequestSense : pData;
+	sptd.sptd.DataTransferLength = dataXferLen;
+	sptd.sptd.TimeOutValue = timeoutSecond;
+	sptd.sptd.DataBuffer = (data == NULL) ? abRequestSense : data;
 	sptd.sptd.SenseInfoOffset = offsetof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE, abRequestSense);
 
-	memcpy(sptd.sptd.Cdb, &stCDB, sizeof(sptd.sptd.Cdb));
+	memcpy(sptd.sptd.Cdb, &cdb, sizeof(sptd.sptd.Cdb));
 
-	xAPIStatus = DeviceIoControl(hDev,
+	apiStatus = DeviceIoControl(dev,
 								IOCTL_SCSI_PASS_THROUGH_DIRECT,
 								&sptd,
 								sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE),
 								&sptd,
 								sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE),
-								&dwByteReturn,
+								&byteReturn,
 								FALSE);
 
-	if ((sptd.sptd.ScsiStatus == 0) && (xAPIStatus != 0))
+	if ((sptd.sptd.ScsiStatus == 0) && (apiStatus != 0))
 		return 0;
 
 	return GetLastError();
 }
 
-BOOL scsi_read(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize) {
-	BOOL apiStatus = FALSE;
-	BYTE abRequestSense[32] = { 0 };
-	DWORD byteReturn;
-	SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE sptd = { 0 };
+DWORD ScsiRead(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize) {
+	_stCDB cdb = {0};
+	cdb.bCDB[0] = 0x28;
+	cdb.bCDB[1] = 0x00;
+	cdb.bCDB[2] = (offsetSector >> 24) & 0xff;
+	cdb.bCDB[3] = (offsetSector >> 16) & 0xff;
+	cdb.bCDB[4] = (offsetSector >> 8) & 0xff;
+	cdb.bCDB[5] = offsetSector & 0xff;
+	cdb.bCDB[6] = 0x00;
+	cdb.bCDB[7] = (readSize >> 8) & 0xff;
+	cdb.bCDB[8] = readSize & 0xff;
+	cdb.bCDB[9] = 0x00;
 
-	sptd.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
-	sptd.sptd.PathId = 0;
-	sptd.sptd.TargetId = 1;
-	sptd.sptd.Lun = 0;
-	sptd.sptd.CdbLength = 10;
-	sptd.sptd.DataIn = SCSI_IOCTL_DATA_IN;
-	sptd.sptd.SenseInfoLength = 24;
-	sptd.sptd.DataTransferLength = 0x200;
-	sptd.sptd.TimeOutValue = 2;
-	sptd.sptd.DataBuffer = readBuffer;
-	sptd.sptd.SenseInfoOffset = offsetof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE, abRequestSense);
-
-	sptd.sptd.Cdb[0] = 0x28;        //opcode: Host read data from storage device
-	sptd.sptd.Cdb[1] = 0x00;
-	sptd.sptd.Cdb[2] = (offsetSector >> 24) & 0xff;
-	sptd.sptd.Cdb[3] = (offsetSector >> 16) & 0xff;
-	sptd.sptd.Cdb[4] = (offsetSector >> 8) & 0xff;
-	sptd.sptd.Cdb[5] = offsetSector & 0xff;
-	sptd.sptd.Cdb[6] = 0x00;
-	sptd.sptd.Cdb[7] = (readSize >> 8) & 0xff;
-	sptd.sptd.Cdb[8] = readSize & 0xff;
-	sptd.sptd.Cdb[9] = 0x00;
-
-	apiStatus = DeviceIoControl(dev,
-		IOCTL_SCSI_PASS_THROUGH_DIRECT,
-		&sptd,
-		sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE),
-		&sptd,
-		sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE),
-		&byteReturn,
-		FALSE);
-
-	return apiStatus;
+	return ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_IN, 10, (void *)readBuffer, SECTOR_SIZE, 2);
 }
