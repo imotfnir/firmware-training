@@ -179,8 +179,6 @@ HCURSOR Cfat32formatterDlg::OnQueryDragIcon()
 
 void Cfat32formatterDlg::OnBnClickedReaddisk()
 {
-	BYTE* readBuffer = (BYTE*)malloc(SECTOR_SIZE);
-
 	HANDLE storageDevice = CreateFile(
 		L"\\\\.\\E:",
 		(GENERIC_READ | GENERIC_WRITE),
@@ -195,11 +193,7 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 		return;
 	}
 
-	ScsiRead(storageDevice, readBuffer, 0, 1);
-	for (size_t i = 0; i < SECTOR_SIZE * 1; i++)
-	{
-		TRACE(_T("0x%X \n"), readBuffer[i]);
-	}
+	InitMbrStructure(storageDevice, fileSystemConfig);
 	return;
 }
 

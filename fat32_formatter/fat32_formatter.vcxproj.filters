@@ -33,7 +33,7 @@
     <ClInclude Include="pch.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
-    <ClInclude Include="CFileSystemConfig.h">
+    <ClInclude Include="CFileSystem.h">
       <Filter>標頭檔</Filter>
     </ClInclude>
     <ClInclude Include="scsi.h">
@@ -50,7 +50,7 @@
     <ClCompile Include="pch.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
-    <ClCompile Include="CFileSystemConfig.cpp">
+    <ClCompile Include="CFileSystem.cpp">
       <Filter>來源檔案</Filter>
     </ClCompile>
     <ClCompile Include="scsi.cpp">

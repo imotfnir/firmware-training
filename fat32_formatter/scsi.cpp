@@ -12,14 +12,14 @@
 typedef struct _SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE
 {
 	SCSI_PASS_THROUGH_DIRECT sptd;
-	DWORD filler;	// align abRequestSense to DWORD boundary
+	DWORD filler; // align abRequestSense to DWORD boundary
 	BYTE abRequestSense[32];
 } SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE, *PSCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE;
 
-//struct _stCDB
+// struct _stCDB
 //{
 //	BYTE bCDB[16];
-//};
+// };
 
 //  bDirection have 3 type
 //  SCSI_IOCTL_DATA_OUT: for write command
@@ -70,7 +70,8 @@ DWORD ScsiCmdSend(HANDLE dev, _stCDB cdb, BYTE direction, BYTE cdbLen, void *dat
 	return GetLastError();
 }
 
-DWORD ScsiRead(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize) {
+DWORD ScsiRead(HANDLE dev, BYTE *readBuffer, UINT offsetSector, UINT readSize)
+{
 	_stCDB cdb = {0};
 	cdb.bCDB[0] = 0x28;
 	cdb.bCDB[1] = 0x00;
@@ -84,4 +85,43 @@ DWORD ScsiRead(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize) {
 	cdb.bCDB[9] = 0x00;
 
 	return ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_IN, 10, (void *)readBuffer, SECTOR_SIZE, 2);
+}
+
+DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSize)
+{
+	_stCDB cdb = {0};
+	cdb.bCDB[0] = 0x2A;
+	cdb.bCDB[1] = 0x00;
+	cdb.bCDB[2] = (offsetSector >> 24) & 0xff;
+	cdb.bCDB[3] = (offsetSector >> 16) & 0xff;
+	cdb.bCDB[4] = (offsetSector >> 8) & 0xff;
+	cdb.bCDB[5] = offsetSector & 0xff;
+	cdb.bCDB[6] = 0x00;
+	cdb.bCDB[7] = (writeSize >> 8) & 0xff;
+	cdb.bCDB[8] = writeSize & 0xff;
+	cdb.bCDB[9] = 0x00;
+
+	return ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_OUT, 10, (void *)writeBuffer, SECTOR_SIZE * writeSize, 2);
+}
+
+BOOL PrintBuffer(BYTE *buffer, UINT bufferLen)
+{
+	CHAR printBuffer[10] = {0};
+	for (size_t i = 0; i < bufferLen; i++)
+	{
+		if (i % 0x10 == 0)
+		{
+			sprintf_s(printBuffer, "0x%04X: ", (UINT)i);
+			OutputDebugStringA(printBuffer);
+		}
+
+		sprintf_s(printBuffer, " %02X", buffer[i]);
+		OutputDebugStringA(printBuffer);
+
+		if (i % 0x10 == 0xF)
+		{
+			OutputDebugStringA("\n");
+		}
+	}
+	return true;
 }

@@ -183,7 +183,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CFileSystemConfig.h" />
+    <ClInclude Include="CFileSystem.h" />
     <ClInclude Include="fat32_formatter.h" />
     <ClInclude Include="fat32_formatterDlg.h" />
     <ClInclude Include="framework.h" />
@@ -193,7 +193,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CFileSystemConfig.cpp" />
+    <ClCompile Include="CFileSystem.cpp" />
     <ClCompile Include="fat32_formatter.cpp" />
     <ClCompile Include="fat32_formatterDlg.cpp" />
     <ClCompile Include="pch.cpp">
