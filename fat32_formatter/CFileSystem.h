@@ -15,14 +15,14 @@ typedef struct {
 	BYTE startingChs[3];
 	BYTE osType;
 	BYTE endingChs[3];
-	DWORD startingLba;
-	DWORD sizeInLba;
+	BYTE startingLba[4];
+	BYTE sizeInLba[4];
 }MBR_PARTITION_RECORD;
 
 typedef struct {
 	BYTE bootCode[446];
 	MBR_PARTITION_RECORD partitionRecode[4];
-	WORD signature;
+	BYTE signature[2];
 }MBR_STRUCTURE;
 
 class CFileSystemConfig

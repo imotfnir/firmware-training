@@ -15,9 +15,13 @@ MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config)
 	mbr.partitionRecode[0].endingChs[0] = 0xFE;
 	mbr.partitionRecode[0].endingChs[1] = 0xFF;
 	mbr.partitionRecode[0].endingChs[2] = 0xFF;
-	mbr.partitionRecode[0].startingLba = config.offsetOfPartitionInByte / 512;
-	mbr.partitionRecode[0].sizeInLba = 0; // ToDo
-	mbr.signature = 0xaa55;
+	mbr.partitionRecode[0].startingLba[0] = config.offsetOfPartitionInByte / 512;
+	mbr.partitionRecode[0].startingLba[1] = (config.offsetOfPartitionInByte / 512) << 8;
+	mbr.partitionRecode[0].startingLba[2] = (config.offsetOfPartitionInByte / 512) << 16;
+	mbr.partitionRecode[0].startingLba[3] = (config.offsetOfPartitionInByte / 512) << 24;
+	mbr.partitionRecode[0].sizeInLba[0] = 0; // ToDo
+	mbr.signature[0] = 0x55;
+	mbr.signature[1] = 0xaa;
 	return mbr;
 }
 
