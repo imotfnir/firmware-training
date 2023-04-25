@@ -31,9 +31,7 @@ BOOL InitMbrStructure(HANDLE dev, CFileSystemConfig config)
 	BYTE *writeBuffer = (BYTE *)&mbr;
 
 	PrintBuffer(writeBuffer, SECTOR_SIZE);
-	ScsiWrite(dev, writeBuffer, 0, 1);
-
-	TRACE(_T("%d"), sizeof(mbr));
+	// ScsiWrite(dev, writeBuffer, 0, 1);
 
 	return true;
 }
