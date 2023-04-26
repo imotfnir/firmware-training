@@ -122,8 +122,11 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	custerSizeComboBox.AddString(_T("4096 Bytes"));
 	custerSizeComboBox.AddString(_T("8192 Bytes"));
 	custerSizeComboBox.AddString(_T("16384 Bytes"));
+	custerSizeComboBox.SelectString(-1, _T("8192 Bytes"));
 	fileSystemComboBox.AddString(_T("FAT32"));
 	fileSystemComboBox.AddString(_T("exFAT"));
+	fatOffset.SetWindowText(_T("2048"));
+	partitionOffset.SetWindowText(_T("8192"));
 
 	return TRUE; // return TRUE  unless you set the focus to a control
 }

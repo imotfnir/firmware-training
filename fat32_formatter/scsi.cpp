@@ -4,22 +4,9 @@
 #include "scsi.h"
 
 #include "pch.h"
-#include <WinIoCtl.h>
+
 #include "devioctl.h"
-#include <ntddscsi.h>
-#include <Windows.h>
 
-typedef struct _SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE
-{
-	SCSI_PASS_THROUGH_DIRECT sptd;
-	DWORD filler; // align abRequestSense to DWORD boundary
-	BYTE abRequestSense[32];
-} SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE, *PSCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE;
-
-// struct _stCDB
-//{
-//	BYTE bCDB[16];
-// };
 
 //  bDirection have 3 type
 //  SCSI_IOCTL_DATA_OUT: for write command

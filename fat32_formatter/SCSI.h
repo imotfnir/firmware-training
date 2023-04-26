@@ -3,20 +3,29 @@
 
 #include "CFileSystem.h"
 
+#include <ntddscsi.h>
+#include <WinIoCtl.h>
+#include <Windows.h>
+
 struct _stCDB
 {
 	BYTE bCDB[16];
 };
 
-extern DWORD ScsiCmdSend(HANDLE dev, _stCDB cdb, BYTE direction, BYTE cdbLen, void* data, DWORD dataXferLen, DWORD timeoutSecond = 60);
+typedef struct _SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE
+{
+	SCSI_PASS_THROUGH_DIRECT sptd;
+	DWORD filler; // align abRequestSense to DWORD boundary
+	BYTE abRequestSense[32];
+} SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE, *PSCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE;
 
-DWORD ScsiRead(HANDLE dev, BYTE* readBuffer, UINT offsetSector, UINT readSize);
-DWORD ScsiWrite(HANDLE dev, BYTE* writeBuffer, UINT offsetSector, UINT writeSize);
-BOOL PrintBuffer(BYTE* buffer, UINT bufferLen);
+extern DWORD ScsiCmdSend(HANDLE dev, _stCDB cdb, BYTE direction, BYTE cdbLen, void *data, DWORD dataXferLen, DWORD timeoutSecond = 60);
+
+DWORD ScsiRead(HANDLE dev, BYTE *readBuffer, UINT offsetSector, UINT readSize);
+DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSize);
+BOOL PrintBuffer(BYTE *buffer, UINT bufferLen);
 BOOL Format(HANDLE dev, CFileSystemConfig config);
 BOOL InitPartitionTable(HANDLE dev);
 BOOL InitFatFileSystem(HANDLE dev);
 
-
-
-#endif //SCSI_H
+#endif // SCSI_H

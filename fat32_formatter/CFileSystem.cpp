@@ -1,7 +1,9 @@
 #include "CFileSystem.h"
 
-#include "pch.h"
 #include "scsi.h"
+#include "pch.h"
+
+#include <cmath>
 
 MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config)
 {
@@ -16,13 +18,9 @@ MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config)
 	mbr.partitionRecode[0].endingChs[0] = 0xFE;
 	mbr.partitionRecode[0].endingChs[1] = 0xFF;
 	mbr.partitionRecode[0].endingChs[2] = 0xFF;
-	mbr.partitionRecode[0].startingLba[0] = config.offsetOfPartitionInByte / 512;
-	mbr.partitionRecode[0].startingLba[1] = (config.offsetOfPartitionInByte / 512) << 8;
-	mbr.partitionRecode[0].startingLba[2] = (config.offsetOfPartitionInByte / 512) << 16;
-	mbr.partitionRecode[0].startingLba[3] = (config.offsetOfPartitionInByte / 512) << 24;
-	mbr.partitionRecode[0].sizeInLba[0] = 0; // ToDo
-	mbr.signature[0] = 0x55;
-	mbr.signature[1] = 0xaa;
+	mbr.partitionRecode[0].startingLba = config.offsetOfPartitionInByte / 512;
+	mbr.partitionRecode[0].sizeInLba = 0; // ToDo
+	mbr.signature = 0xAA55;
 	return mbr;
 }
 
@@ -37,7 +35,7 @@ BOOL InitMbrStructure(HANDLE dev, CFileSystemConfig config)
 	return true;
 }
 
-FAT32_BOOT_SECTOR PrepareFat32BootSector(CFileSystemConfig config)
+FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 {
 	FAT32_BOOT_SECTOR bootSector = {0};
 	TRACE(_T("sizeof(FAT32_BOOT_SECTOR): 0x%X\n"), sizeof(bootSector));
@@ -46,74 +44,104 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(CFileSystemConfig config)
 	bootSector.jmpBoot[1] = 0x58;
 	bootSector.jmpBoot[2] = 0x90;
 	memcpy(bootSector.oemName, "MSDOS5.0", sizeof(FAT32_BOOT_SECTOR::oemName));
-	bootSector.bytesPerSector[0] = SECTOR_SIZE & 0xFF;
-	bootSector.bytesPerSector[1] = SECTOR_SIZE >> 8;
+	bootSector.bytesPerSector = SECTOR_SIZE;
 	bootSector.sectorsPerCluster = config.clusterSizeInByte / SECTOR_SIZE;
-	bootSector.reservedSectorCount[0] = (config.offsetOfFatTableInByte / SECTOR_SIZE) & 0Xff; //ToDo
-	bootSector.reservedSectorCount[1] = (config.offsetOfFatTableInByte / SECTOR_SIZE) >> 8; //ToDo
+	bootSector.reservedSectorCount = (config.offsetOfFatTableInByte / SECTOR_SIZE); // ToDo
 	bootSector.numOfFats = 0x2;
-	bootSector.rootEntryCount[0] = 0x2;
-	bootSector.rootEntryCount[1] = 0x0;
-	bootSector.totalSectors16[0] = 0x0;
-	bootSector.totalSectors16[1] = 0x0;
+	bootSector.rootEntryCount = 0x0;
+	bootSector.totalSectors16 = 0x0;
 	bootSector.media = 0xF0;
-	bootSector.fatSize16[0] = 0x0;
-	bootSector.fatSize16[1] = 0x0;
-	bootSector.sectorsPerTrack[0] = 0x3F;
-	bootSector.sectorsPerTrack[1] = 0x0;
-	bootSector.numberOfHeads[0] = 0xFF;
-	bootSector.numberOfHeads[1] = 0x0;
+	bootSector.fatSize16 = 0x0;
+	bootSector.sectorsPerTrack = 0x3F;
+	bootSector.numberOfHeads = 0xFF;
 	if (!config.isMBR)
 	{
-		bootSector.hiddenSectors[0] = 0x0;
-		bootSector.hiddenSectors[1] = 0x0;
-		bootSector.hiddenSectors[2] = 0x0;
-		bootSector.hiddenSectors[3] = 0x0;
+		bootSector.hiddenSectors = 0x0;
 	}
 	else
 	{
-		// ToDo
-		bootSector.hiddenSectors[0] = (config.offsetOfPartitionInByte / SECTOR_SIZE) & 0XFF;
-		bootSector.hiddenSectors[1] = (config.offsetOfPartitionInByte / SECTOR_SIZE) >> 8 & 0xFF;
-		bootSector.hiddenSectors[2] = (config.offsetOfPartitionInByte / SECTOR_SIZE) >> 16 & 0xFF;
-		bootSector.hiddenSectors[3] = (config.offsetOfPartitionInByte / SECTOR_SIZE) >> 24 & 0xFF;
+		bootSector.hiddenSectors = (config.offsetOfPartitionInByte / SECTOR_SIZE);
 	}
-	bootSector.totalSectors32[2] = 0x1; //ToDo
-	bootSector.fatSize32[1] = 0x1; //ToDo
-	bootSector.extFlags[0] = 0x0;
-	bootSector.extFlags[1] = 0x0;
-	bootSector.extFlags[2] = 0x0;
-	bootSector.extFlags[3] = 0x0;
-	bootSector.fsVersion[0] = 0x2;
-	bootSector.fsVersion[1] = 0x0;
-	bootSector.firstRootCluster[0] = 0x2;
-	bootSector.firstRootCluster[1] = 0x0;
-	bootSector.firstRootCluster[2] = 0x0;
-	bootSector.firstRootCluster[3] = 0x0;
-	bootSector.fsInfo[0] = 0x1;
-	bootSector.fsInfo[1] = 0x0;
-	bootSector.backupBootsector[0] = 0x6;
-	bootSector.backupBootsector[1] = 0x0;
+	bootSector.totalSectors32 = bootSector.hiddenSectors - GetDiskSizeSectors(dev); // ToDo
+	TRACE(_T("hiddenSectors: 0x%X\n"), bootSector.hiddenSectors);
+	TRACE(_T("GetDiskSizeSectors: 0x%X\n"), GetDiskSizeSectors(dev));
+	TRACE(_T("totalSectors32: 0x%X\n"), bootSector.totalSectors32);
+	bootSector.fatSize32 = GetFatTableSizeSectors(bootSector.totalSectors32, bootSector.sectorsPerCluster); // ToDo
+	TRACE(_T("fatSize32: 0x%X\n"), bootSector.fatSize32);
+	bootSector.extFlags = 0x0;
+	bootSector.fsVersion = 0x2;
+	bootSector.firstRootCluster = 0x2;
+	bootSector.fsInfo = 0x1;
+	bootSector.backupBootSector = 0x6;
 	// bootSector.reserved[12] ;
 	bootSector.driveNumber = 0x80;
 	bootSector.reserved1 = 0x0;
 	bootSector.bootSignature = 0x29;
 	// bootSector.volumeID[4]
-	memcpy(bootSector.volumeLable, "NO NAME    ", 11);
-	memcpy(bootSector.fileSystemType, "FAT32   ", 8);
+	memcpy(bootSector.volumeLable, "NO NAME    ", sizeof(FAT32_BOOT_SECTOR::volumeLable));
+	memcpy(bootSector.fileSystemType, "FAT32   ", sizeof(FAT32_BOOT_SECTOR::fileSystemType));
 	// bootSector.zeros[420]
-	bootSector.signatureWord[0] = 0x55;
-	bootSector.signatureWord[1] = 0xAA;
+	bootSector.signatureWord = 0xAA55;
 
 	return bootSector;
 }
 
 BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config)
 {
-	FAT32_BOOT_SECTOR bootSector = PrepareFat32BootSector(config);
+	FAT32_BOOT_SECTOR bootSector = PrepareFat32BootSector(dev, config);
 
 	PrintBuffer((BYTE *)&bootSector, SECTOR_SIZE);
 	return true;
+}
+
+DWORD GetDiskSizeSectors(HANDLE dev)
+{
+	int status;
+	ULONG length = 0;
+	DWORD bytesReturn;
+	SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE sptd;
+	BYTE read_size_buf[64 * 1024 + 10];
+	sptd.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
+	sptd.sptd.PathId = 0;
+	sptd.sptd.TargetId = 1;
+	sptd.sptd.Lun = 0;
+	sptd.sptd.CdbLength = 10;
+	sptd.sptd.DataIn = SCSI_IOCTL_DATA_IN;
+	sptd.sptd.SenseInfoLength = 24;
+	sptd.sptd.DataTransferLength = 8;
+	sptd.sptd.TimeOutValue = 2;
+	sptd.sptd.DataBuffer = read_size_buf;
+	sptd.sptd.SenseInfoOffset = offsetof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE, abRequestSense);
+	sptd.sptd.Cdb[0] = 0x25; // opcode: Read storage volume
+	length = sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE);
+	status = DeviceIoControl(dev,
+							 IOCTL_SCSI_PASS_THROUGH_DIRECT,
+							 &sptd,
+							 length,
+							 &sptd,
+							 length,
+							 &bytesReturn,
+							 NULL);
+	if (0 == status)
+	{
+		return 0;
+	}
+	int sectors = read_size_buf[0] * (1 << 24) + read_size_buf[1] * (1 << 16) + read_size_buf[2] * (1 << 8) + read_size_buf[3] + 1;
+	return sectors;
+}
+
+DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster)
+{
+	UINT numberOfCluster = dataSizeSector / sectorPerCluster;
+	DWORD numberOfSector;
+
+	numberOfSector = (numberOfCluster * 4) / SECTOR_SIZE; // 1 FAT entry is 32bits aka 4bytes
+	if ((numberOfCluster * 4) % SECTOR_SIZE != 0)
+	{
+		numberOfSector++;
+	}
+
+	return numberOfSector;
 }
 
 CFileSystemConfig::CFileSystemConfig()
