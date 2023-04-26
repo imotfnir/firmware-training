@@ -194,6 +194,7 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 	}
 
 	InitMbrStructure(storageDevice, fileSystemConfig);
+	InitFat32BootSector(storageDevice, fileSystemConfig);
 	return;
 }
 

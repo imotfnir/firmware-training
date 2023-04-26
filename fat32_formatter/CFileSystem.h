@@ -38,7 +38,7 @@ typedef struct
 	BYTE numOfFats;
 	BYTE rootEntryCount[2];
 	BYTE totalSectors16[2];
-	BYTE mdeia;
+	BYTE media;
 	BYTE fatSize16[2];
 	BYTE sectorsPerTrack[2];
 	BYTE numberOfHeads[2];
@@ -49,7 +49,7 @@ typedef struct
 	BYTE fsVersion[2];
 	BYTE firstRootCluster[4];
 	BYTE fsInfo[2];
-	BYTE bkBootsector[2];
+	BYTE backupBootsector[2];
 	BYTE reserved[12];
 	BYTE driveNumber;
 	BYTE reserved1;
@@ -98,5 +98,7 @@ public:
 
 MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config);
 BOOL InitMbrStructure(HANDLE dev, CFileSystemConfig config);
+FAT32_BOOT_SECTOR PrepareFat32BootSector(CFileSystemConfig config);
+BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config);
 
 #endif // C_FILE_SYSTEM_H
