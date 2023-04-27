@@ -2,7 +2,6 @@
 // fat32_formatterDlg.cpp : implementation file
 //
 
-
 #include "pch.h"
 #include "framework.h"
 #include "fat32_formatter.h"
@@ -64,10 +63,10 @@ void Cfat32formatterDlg::DoDataExchange(CDataExchange *pDX)
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_ReadDisk, readDiskButton);
 	DDX_Control(pDX, IDC_COMBO_ClUSTER_SIZE, custerSizeComboBox);
-	DDX_Control(pDX, IDC_COMBO2, fileSystemComboBox);
 	DDX_Control(pDX, IDC_EDIT_FAT_OFFSET, fatOffset);
 	DDX_Control(pDX, IDC_EDIT_PARTITION_OFFSET, partitionOffset);
 	DDX_Control(pDX, IDC_CHECK_MBR, mbrCheckBox);
+	DDX_Control(pDX, IDC_EDIT_DISK_PATH, diskPathEdit);
 }
 
 BEGIN_MESSAGE_MAP(Cfat32formatterDlg, CDialogEx)
@@ -123,10 +122,9 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	custerSizeComboBox.AddString(_T("8192 Bytes"));
 	custerSizeComboBox.AddString(_T("16384 Bytes"));
 	custerSizeComboBox.SelectString(-1, _T("8192 Bytes"));
-	fileSystemComboBox.AddString(_T("FAT32"));
-	fileSystemComboBox.AddString(_T("exFAT"));
 	fatOffset.SetWindowText(_T("2048"));
 	partitionOffset.SetWindowText(_T("8192"));
+	diskPathEdit.SetWindowText(_T("E:\\ "));
 
 	return TRUE; // return TRUE  unless you set the focus to a control
 }
@@ -189,9 +187,9 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 		NULL,
 		OPEN_EXISTING,
 		0,
-		NULL
-	);
-	if (storageDevice == INVALID_HANDLE_VALUE) {
+		NULL);
+	if (storageDevice == INVALID_HANDLE_VALUE)
+	{
 		TRACE(_T("Failed to open drive\n"));
 		return;
 	}
@@ -204,24 +202,20 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
 {
 	CString value;
-	custerSizeComboBox.GetLBText(custerSizeComboBox.GetCurSel(), value); 
+	custerSizeComboBox.GetLBText(custerSizeComboBox.GetCurSel(), value);
 	fileSystemConfig.clusterSizeInByte = _ttoi(value);
 }
 
 void Cfat32formatterDlg::OnBnClickedButtonShowConfig()
 {
-	CEdit *pEditCtrl = (CEdit *)GetDlgItem(IDC_STATIC_DISK_DATA);
-	CString strText;
-	strText.Format(_T("Have MBR: %d\n\
+	TRACE(_T("\nHave MBR: %d\n\
 Cluster Size: %d Bytes\n\
 Offset of FAT Table : % d Bytes\n\
 Offset of partition : %d Bytes\n"),
-fileSystemConfig.isMBR,
-fileSystemConfig.clusterSizeInByte,
-fileSystemConfig.offsetOfFatTableInByte,
-fileSystemConfig.offsetOfPartitionInByte);
-	TRACE(_T("trace code %d \n"), fileSystemConfig.isMBR);
-	pEditCtrl->SetWindowText(strText);
+		  fileSystemConfig.isMBR,
+		  fileSystemConfig.clusterSizeInByte,
+		  fileSystemConfig.offsetOfFatTableInByte,
+		  fileSystemConfig.offsetOfPartitionInByte);
 	return;
 }
 

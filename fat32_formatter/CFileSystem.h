@@ -5,12 +5,6 @@
 
 #define SECTOR_SIZE 0x200U
 
-typedef enum
-{
-	Fat32,
-	ExFat
-} FILE_SYSTEM_TYPE;
-
 #pragma pack(push, 1)
 typedef struct
 {
@@ -94,7 +88,6 @@ public:
 public:
 	UINT isMBR;
 	UINT clusterSizeInByte;
-	FILE_SYSTEM_TYPE fileSystem;
 	UINT offsetOfFatTableInByte;
 	UINT offsetOfPartitionInByte;
 	CString diskPath;

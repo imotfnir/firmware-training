@@ -38,9 +38,9 @@ public:
 	CButton readDiskButton;
 	CButton mbrCheckBox;
 	CComboBox custerSizeComboBox;
-	CComboBox fileSystemComboBox;
 	CEdit fatOffset;
 	CEdit partitionOffset;
+	CEdit diskPathEdit;
 	CFileSystemConfig fileSystemConfig;
 	afx_msg void OnEnChangeEditFatOffset();
 	afx_msg void OnEnChangeEditPartitionOffset();

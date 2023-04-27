@@ -128,8 +128,7 @@ CFileSystemConfig::CFileSystemConfig()
 {
 	this->isMBR = false;
 	this->clusterSizeInByte = 8192;
-	this->fileSystem = Fat32;
 	this->offsetOfFatTableInByte = 2048;
 	this->offsetOfPartitionInByte = 8192;
-	this->diskPath = "";
+	this->diskPath = "E:\\";
 }
