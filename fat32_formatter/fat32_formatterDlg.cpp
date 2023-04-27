@@ -66,7 +66,7 @@ void Cfat32formatterDlg::DoDataExchange(CDataExchange *pDX)
 	DDX_Control(pDX, IDC_EDIT_FAT_OFFSET, fatOffset);
 	DDX_Control(pDX, IDC_EDIT_PARTITION_OFFSET, partitionOffset);
 	DDX_Control(pDX, IDC_CHECK_MBR, mbrCheckBox);
-	DDX_Control(pDX, IDC_EDIT_DISK_PATH, diskPathEdit);
+	DDX_Control(pDX, IDC_COMBO_DISK_PATH, diskPathComboBox);
 }
 
 BEGIN_MESSAGE_MAP(Cfat32formatterDlg, CDialogEx)
@@ -80,6 +80,7 @@ ON_BN_CLICKED(IDC_BUTTON_SHOW_CONFIG, &Cfat32formatterDlg::OnBnClickedButtonShow
 ON_EN_CHANGE(IDC_EDIT_FAT_OFFSET, &Cfat32formatterDlg::OnEnChangeEditFatOffset)
 ON_EN_CHANGE(IDC_EDIT_PARTITION_OFFSET, &Cfat32formatterDlg::OnEnChangeEditPartitionOffset)
 ON_BN_CLICKED(IDC_CHECK_MBR, &Cfat32formatterDlg::OnBnClickedCheckMbr)
+ON_CBN_SELCHANGE(IDC_COMBO_DISK_PATH, &Cfat32formatterDlg::OnCbnSelchangeComboDiskPath)
 END_MESSAGE_MAP()
 
 // Cfat32formatterDlg message handlers
@@ -114,6 +115,7 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE); // Set small icon
 
 	// TODO: Add extra initialization here
+	DWORD driveMask = GetLogicalDrives();
 
 	custerSizeComboBox.AddString(_T("512 Bytes"));
 	custerSizeComboBox.AddString(_T("1024 Bytes"));
@@ -122,9 +124,26 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	custerSizeComboBox.AddString(_T("8192 Bytes"));
 	custerSizeComboBox.AddString(_T("16384 Bytes"));
 	custerSizeComboBox.SelectString(-1, _T("8192 Bytes"));
+
+	for (INT i = 0; i < 26; i++)
+	{
+		if (driveMask & (1 << i))
+		{
+			CHAR driveLabel[4] = {'A' + (CHAR)i, ':', '\\', '\0'};
+			UINT type = GetDriveTypeA(driveLabel);
+			if (type == DRIVE_FIXED || type == DRIVE_REMOVABLE)
+			{
+				CHAR deviceName[32] = {0};
+				sprintf_s(deviceName, "\\\\.\\PhysicalDrive%d\n", i);
+				OutputDebugStringA(driveLabel);
+				OutputDebugStringA(deviceName);
+				diskPathComboBox.AddString((CString)driveLabel);
+			}
+		}
+	}
+
 	fatOffset.SetWindowText(_T("2048"));
 	partitionOffset.SetWindowText(_T("8192"));
-	diskPathEdit.SetWindowText(_T("E:\\ "));
 
 	return TRUE; // return TRUE  unless you set the focus to a control
 }
@@ -196,6 +215,7 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 
 	InitMbrStructure(storageDevice, fileSystemConfig);
 	InitFat32BootSector(storageDevice, fileSystemConfig);
+
 	return;
 }
 
@@ -208,14 +228,12 @@ void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
 
 void Cfat32formatterDlg::OnBnClickedButtonShowConfig()
 {
-	TRACE(_T("\nHave MBR: %d\n\
-Cluster Size: %d Bytes\n\
-Offset of FAT Table : % d Bytes\n\
-Offset of partition : %d Bytes\n"),
-		  fileSystemConfig.isMBR,
-		  fileSystemConfig.clusterSizeInByte,
-		  fileSystemConfig.offsetOfFatTableInByte,
-		  fileSystemConfig.offsetOfPartitionInByte);
+	TRACE(_T("Have MBR: %d\n"), fileSystemConfig.isMBR);
+	TRACE(_T("Cluster Size: %d Bytes\n"), fileSystemConfig.clusterSizeInByte);
+	TRACE(_T("Offset of FAT Table : % d Bytes\n"), fileSystemConfig.offsetOfFatTableInByte);
+	TRACE(_T("Offset of partition : %d Bytes\n"), fileSystemConfig.offsetOfPartitionInByte);
+	TRACE(_T("Disk Path : %s\n"), fileSystemConfig.diskPath);
+
 	return;
 }
 
@@ -241,4 +259,11 @@ void Cfat32formatterDlg::OnBnClickedCheckMbr()
 		return;
 	}
 	fileSystemConfig.isMBR = false;
+}
+
+void Cfat32formatterDlg::OnCbnSelchangeComboDiskPath()
+{
+	CString value;
+	diskPathComboBox.GetLBText(diskPathComboBox.GetCurSel(), value);
+	fileSystemConfig.diskPath = value;
 }
