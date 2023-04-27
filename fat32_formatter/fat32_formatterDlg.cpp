@@ -195,33 +195,6 @@ HCURSOR Cfat32formatterDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-void Cfat32formatterDlg::OnBnClickedReaddisk()
-{
-	TRACE(fileSystemConfig.diskPath);
-	HANDLE storageDevice = CreateFile(
-		fileSystemConfig.diskPath,
-		(GENERIC_READ | GENERIC_WRITE),
-		(FILE_SHARE_READ | FILE_SHARE_WRITE),
-		NULL,
-		OPEN_EXISTING,
-		0,
-		NULL);
-	if (storageDevice == INVALID_HANDLE_VALUE)
-	{
-		TRACE(_T("Failed to open drive\n"));
-		return;
-	}
-
-	DeviceLock(storageDevice);
-
-	InitMbrStructure(storageDevice, fileSystemConfig);
-	InitFat32BootSector(storageDevice, fileSystemConfig);
-
-	DeviceUnLock(storageDevice);
-	CloseHandle(storageDevice);
-
-	return;
-}
 
 void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
 {
@@ -270,4 +243,32 @@ void Cfat32formatterDlg::OnCbnSelchangeComboDiskPath()
 	CString value;
 	diskPathComboBox.GetLBText(diskPathComboBox.GetCurSel(), value);
 	fileSystemConfig.diskPath = value;
+}
+
+void Cfat32formatterDlg::OnBnClickedReaddisk()
+{
+	TRACE(fileSystemConfig.diskPath);
+	HANDLE storageDevice = CreateFile(
+		fileSystemConfig.diskPath,
+		(GENERIC_READ | GENERIC_WRITE),
+		(FILE_SHARE_READ | FILE_SHARE_WRITE),
+		NULL,
+		OPEN_EXISTING,
+		0,
+		NULL);
+	if (storageDevice == INVALID_HANDLE_VALUE)
+	{
+		TRACE(_T("Failed to open drive\n"));
+		return;
+	}
+
+	DeviceLock(storageDevice);
+
+	InitMbrStructure(storageDevice, fileSystemConfig);
+	InitFat32BootSector(storageDevice, fileSystemConfig);
+
+	DeviceUnLock(storageDevice);
+	CloseHandle(storageDevice);
+
+	return;
 }

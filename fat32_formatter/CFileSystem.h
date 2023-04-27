@@ -49,7 +49,7 @@ typedef struct
 	BYTE driveNumber;
 	BYTE reserved1;
 	BYTE bootSignature;
-	DWORD volumeID[4];
+	DWORD volumeID;
 	CHAR volumeLable[11];
 	CHAR fileSystemType[8];
 	BYTE zeros[420];
@@ -101,4 +101,5 @@ DWORD GetDiskSizeSectors(HANDLE dev);
 DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster);
 bool DeviceLock(HANDLE dev);
 bool DeviceUnLock(HANDLE dev);
+DWORD GetVolumeId();
 #endif // C_FILE_SYSTEM_H

@@ -29,7 +29,7 @@ BOOL InitMbrStructure(HANDLE dev, CFileSystemConfig config)
 	MBR_STRUCTURE mbr = PrepareMbrStructure(config);
 	BYTE *writeBuffer = (BYTE *)&mbr;
 
-	PrintBuffer(writeBuffer, SECTOR_SIZE);
+	PrintBuffer(writeBuffer, sizeof(mbr));
 	// ScsiWrite(dev, writeBuffer, 0, 1);
 
 	return true;
@@ -62,26 +62,19 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	{
 		bootSector.hiddenSectors = (config.offsetOfPartitionInByte / SECTOR_SIZE);
 	}
-	bootSector.totalSectors32 = bootSector.hiddenSectors - GetDiskSizeSectors(dev); // ToDo
-	TRACE(_T("hiddenSectors: 0x%X\n"), bootSector.hiddenSectors);
-	TRACE(_T("GetDiskSizeSectors: 0x%X\n"), GetDiskSizeSectors(dev));
-	TRACE(_T("totalSectors32: 0x%X\n"), bootSector.totalSectors32);
+	bootSector.totalSectors32 = GetDiskSizeSectors(dev) - bootSector.hiddenSectors;
 	bootSector.fatSize32 = GetFatTableSizeSectors(bootSector.totalSectors32, bootSector.sectorsPerCluster); // ToDo
-	TRACE(_T("fatSize32: 0x%X\n"), bootSector.fatSize32);
-
 	bootSector.extFlags = 0x0;
 	bootSector.fsVersion = 0x2;
 	bootSector.firstRootCluster = 0x2;
 	bootSector.fsInfo = 0x1;
 	bootSector.backupBootSector = 0x6;
-	// bootSector.reserved[12] ;
 	bootSector.driveNumber = 0x80;
 	bootSector.reserved1 = 0x0;
 	bootSector.bootSignature = 0x29;
-	// bootSector.volumeID[4]
+	bootSector.volumeID = GetVolumeId();
 	memcpy(bootSector.volumeLable, "NO NAME    ", sizeof(FAT32_BOOT_SECTOR::volumeLable));
 	memcpy(bootSector.fileSystemType, "FAT32   ", sizeof(FAT32_BOOT_SECTOR::fileSystemType));
-	// bootSector.zeros[420]
 	bootSector.signatureWord = 0xAA55;
 
 	return bootSector;
@@ -91,23 +84,36 @@ BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config)
 {
 	FAT32_BOOT_SECTOR bootSector = PrepareFat32BootSector(dev, config);
 
-	PrintBuffer((BYTE *)&bootSector, SECTOR_SIZE);
+	PrintBuffer((BYTE *)&bootSector, sizeof(bootSector));
 	return true;
 }
 
 DWORD GetDiskSizeSectors(HANDLE dev)
 {
-	DISK_GEOMETRY diskGeometry;
-	BOOL status;
+	GET_LENGTH_INFORMATION lengthInfo;
 	DWORD returnStatus;
-	status = DeviceIoControl(dev, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &diskGeometry, sizeof(diskGeometry), &returnStatus, NULL);
-	TRACE(_T("Cylinders: %d\n", Cylinders));
-	TRACE(_T("MediaType: %d\n", MediaType));
-	TRACE(_T("TracksPerCylinder: %d\n", TracksPerCylinder));
-	TRACE(_T("SectorsPerTrack: %d\n", SectorsPerTrack));
-	TRACE(_T("BytesPerSector: %d\n", BytesPerSector));
+	ULONGLONG diskSizeByte;
+	DWORD diskSizeSector;
 
-	return 0;
+	if (!DeviceIoControl(dev, IOCTL_DISK_GET_LENGTH_INFO, NULL, 0, &lengthInfo, sizeof(lengthInfo), &returnStatus, NULL))
+	{
+		TRACE(_T("Failed to get disk length!\n"));
+		return 0;
+	}
+
+	diskSizeByte = lengthInfo.Length.QuadPart;
+	diskSizeSector = (DWORD)(diskSizeByte / SECTOR_SIZE);
+	TRACE(_T("Disk size: 0x%llX B\n"), diskSizeByte);
+	TRACE(_T("Disk size: 0x%X Sector\n"), diskSizeSector);
+	if (diskSizeByte >= 0x20000000000U)
+	{
+		return 0xFFFFFFFFU;
+	}
+	if (diskSizeSector < 0x10000U)
+	{
+		return 0x10000U;
+	}
+	return diskSizeSector;
 }
 
 DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster)
@@ -124,7 +130,6 @@ DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster)
 	return numberOfSector;
 }
 
-
 bool DeviceLock(HANDLE dev)
 {
 	DWORD returnStatus;
@@ -138,6 +143,21 @@ bool DeviceUnLock(HANDLE dev)
 	if (0 == DeviceIoControl(dev, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL))
 		return false;
 	return true;
+}
+
+DWORD GetVolumeId()
+{
+	SYSTEMTIME s;
+	DWORD d;
+	WORD lo, hi, tmp;
+	GetLocalTime(&s);
+	lo = s.wDay + (s.wMonth << 8);
+	tmp = (s.wMilliseconds / 10) + (s.wSecond << 8);
+	lo += tmp;
+	hi = s.wMinute + (s.wHour << 8);
+	hi += s.wYear;
+	d = lo + (hi << 16);
+	return d;
 }
 
 CFileSystemConfig::CFileSystemConfig()
