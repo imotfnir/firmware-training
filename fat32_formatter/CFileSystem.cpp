@@ -160,6 +160,28 @@ DWORD GetVolumeId()
 	return d;
 }
 
+FAT32_FSINFO PrepareFat32FsInfo(HANDLE dev, CFileSystemConfig config)
+{
+	FAT32_FSINFO fsInfo = {0};
+	TRACE(_T("sizeof(FAT32_FSINFO): 0x%X\n"), sizeof(fsInfo));
+
+	fsInfo.leadSignature = 0x41615252;
+	fsInfo.structureSignature = 0x61417272;
+	fsInfo.freeCount = 0xffffffff;
+	fsInfo.nextFree = 0xffffffff;
+	fsInfo.trailSignature = 0xaa550000;
+
+	return fsInfo;
+}
+
+BOOL InitFat32FsInfo(HANDLE dev, CFileSystemConfig config)
+{
+	FAT32_FSINFO fsInfo = PrepareFat32FsInfo(dev, config);
+
+	PrintBuffer((BYTE *)&fsInfo, sizeof(fsInfo));
+	return true;
+}
+
 CFileSystemConfig::CFileSystemConfig()
 {
 	this->isMBR = false;

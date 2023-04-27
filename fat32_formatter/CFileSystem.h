@@ -102,4 +102,8 @@ DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster);
 bool DeviceLock(HANDLE dev);
 bool DeviceUnLock(HANDLE dev);
 DWORD GetVolumeId();
+FAT32_FSINFO PrepareFat32FsInfo(HANDLE dev, CFileSystemConfig config);
+BOOL InitFat32FsInfo(HANDLE dev, CFileSystemConfig config);
+
+
 #endif // C_FILE_SYSTEM_H
