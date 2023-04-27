@@ -130,14 +130,12 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 		if (driveMask & (1 << i))
 		{
 			CHAR driveLabel[4] = {'A' + (CHAR)i, ':', '\\', '\0'};
+			CHAR deviceName[7] = {'\\', '\\', '.', '\\', 'A' + (CHAR)i, ':', '\0'};
 			UINT type = GetDriveTypeA(driveLabel);
 			if (type == DRIVE_FIXED || type == DRIVE_REMOVABLE)
 			{
-				CHAR deviceName[32] = {0};
-				sprintf_s(deviceName, "\\\\.\\PhysicalDrive%d\n", i);
-				OutputDebugStringA(driveLabel);
 				OutputDebugStringA(deviceName);
-				diskPathComboBox.AddString((CString)driveLabel);
+				diskPathComboBox.AddString((CString)deviceName);
 			}
 		}
 	}
@@ -199,8 +197,9 @@ HCURSOR Cfat32formatterDlg::OnQueryDragIcon()
 
 void Cfat32formatterDlg::OnBnClickedReaddisk()
 {
+	TRACE(fileSystemConfig.diskPath);
 	HANDLE storageDevice = CreateFile(
-		L"\\\\.\\E:",
+		fileSystemConfig.diskPath,
 		(GENERIC_READ | GENERIC_WRITE),
 		(FILE_SHARE_READ | FILE_SHARE_WRITE),
 		NULL,
@@ -213,8 +212,13 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 		return;
 	}
 
+	DeviceLock(storageDevice);
+
 	InitMbrStructure(storageDevice, fileSystemConfig);
 	InitFat32BootSector(storageDevice, fileSystemConfig);
+
+	DeviceUnLock(storageDevice);
+	CloseHandle(storageDevice);
 
 	return;
 }

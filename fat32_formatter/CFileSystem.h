@@ -99,5 +99,6 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config);
 BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config);
 DWORD GetDiskSizeSectors(HANDLE dev);
 DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster);
-
+bool DeviceLock(HANDLE dev);
+bool DeviceUnLock(HANDLE dev);
 #endif // C_FILE_SYSTEM_H

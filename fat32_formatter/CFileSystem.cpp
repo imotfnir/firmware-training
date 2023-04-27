@@ -124,6 +124,22 @@ DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster)
 	return numberOfSector;
 }
 
+
+bool DeviceLock(HANDLE dev)
+{
+	DWORD returnStatus;
+	if (0 == DeviceIoControl(dev, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL))
+		return false;
+	return true;
+}
+bool DeviceUnLock(HANDLE dev)
+{
+	DWORD returnStatus;
+	if (0 == DeviceIoControl(dev, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL))
+		return false;
+	return true;
+}
+
 CFileSystemConfig::CFileSystemConfig()
 {
 	this->isMBR = false;
