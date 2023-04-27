@@ -140,8 +140,8 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 		}
 	}
 
-	fatOffset.SetWindowText(_T("2048"));
-	partitionOffset.SetWindowText(_T("8192"));
+	fatOffset.SetWindowText(_T("4"));
+	partitionOffset.SetWindowText(_T("4"));
 
 	return TRUE; // return TRUE  unless you set the focus to a control
 }
@@ -207,8 +207,8 @@ void Cfat32formatterDlg::OnBnClickedButtonShowConfig()
 {
 	TRACE(_T("Have MBR: %d\n"), fileSystemConfig.isMBR);
 	TRACE(_T("Cluster Size: %d Bytes\n"), fileSystemConfig.clusterSizeInByte);
-	TRACE(_T("Offset of FAT Table : % d Bytes\n"), fileSystemConfig.offsetOfFatTableInByte);
-	TRACE(_T("Offset of partition : %d Bytes\n"), fileSystemConfig.offsetOfPartitionInByte);
+	TRACE(_T("Offset of FAT Table : % d Sector\n"), fileSystemConfig.offsetOfFatTableInSector);
+	TRACE(_T("Offset of partition : %d Sector\n"), fileSystemConfig.offsetOfPartitionInSector);
 	TRACE(_T("Disk Path : %s\n"), fileSystemConfig.diskPath);
 
 	return;
@@ -218,14 +218,14 @@ void Cfat32formatterDlg::OnEnChangeEditFatOffset()
 {
 	CString value;
 	fatOffset.GetWindowText(value);
-	fileSystemConfig.offsetOfFatTableInByte = _ttoi(value);
+	fileSystemConfig.offsetOfFatTableInSector = _ttoi(value);
 }
 
 void Cfat32formatterDlg::OnEnChangeEditPartitionOffset()
 {
 	CString value;
 	partitionOffset.GetWindowText(value);
-	fileSystemConfig.offsetOfPartitionInByte = _ttoi(value);
+	fileSystemConfig.offsetOfPartitionInSector = _ttoi(value);
 }
 
 void Cfat32formatterDlg::OnBnClickedCheckMbr()

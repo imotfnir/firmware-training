@@ -18,7 +18,7 @@ MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config)
 	mbr.partitionRecode[0].endingChs[0] = 0xFE;
 	mbr.partitionRecode[0].endingChs[1] = 0xFF;
 	mbr.partitionRecode[0].endingChs[2] = 0xFF;
-	mbr.partitionRecode[0].startingLba = config.offsetOfPartitionInByte / 512;
+	mbr.partitionRecode[0].startingLba = config.offsetOfPartitionInSector;
 	mbr.partitionRecode[0].sizeInLba = 0; // ToDo
 	mbr.signature = 0xAA55;
 	return mbr;
@@ -46,7 +46,7 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	memcpy(bootSector.oemName, "MSDOS5.0", sizeof(FAT32_BOOT_SECTOR::oemName));
 	bootSector.bytesPerSector = SECTOR_SIZE;
 	bootSector.sectorsPerCluster = config.clusterSizeInByte / SECTOR_SIZE;
-	bootSector.reservedSectorCount = (config.offsetOfFatTableInByte / SECTOR_SIZE); // ToDo
+	bootSector.reservedSectorCount = config.offsetOfFatTableInSector; // ToDo
 	bootSector.numOfFats = 0x2;
 	bootSector.rootEntryCount = 0x0;
 	bootSector.totalSectors16 = 0x0;
@@ -60,7 +60,7 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	}
 	else
 	{
-		bootSector.hiddenSectors = (config.offsetOfPartitionInByte / SECTOR_SIZE);
+		bootSector.hiddenSectors = config.offsetOfPartitionInSector;
 	}
 	bootSector.totalSectors32 = GetDiskSizeSectors(dev) - bootSector.hiddenSectors;
 	bootSector.fatSize32 = GetFatTableSizeSectors(bootSector.totalSectors32, bootSector.sectorsPerCluster); // ToDo
@@ -130,14 +130,14 @@ DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster)
 	return numberOfSector;
 }
 
-bool DeviceLock(HANDLE dev)
+BOOL DeviceLock(HANDLE dev)
 {
 	DWORD returnStatus;
 	if (0 == DeviceIoControl(dev, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL))
 		return false;
 	return true;
 }
-bool DeviceUnLock(HANDLE dev)
+BOOL DeviceUnLock(HANDLE dev)
 {
 	DWORD returnStatus;
 	if (0 == DeviceIoControl(dev, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL))
@@ -182,11 +182,22 @@ BOOL InitFat32FsInfo(HANDLE dev, CFileSystemConfig config)
 	return true;
 }
 
+BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
+{
+	FAT32_FAT_TABLE fatStructure = {0};
+	UINT fatStructureStartingOffset;
+
+	fatStructureStartingOffset = config.offsetOfFatTableInSector + config.offsetOfPartitionInSector;
+
+	return true;
+}
+
 CFileSystemConfig::CFileSystemConfig()
 {
 	this->isMBR = false;
 	this->clusterSizeInByte = 8192;
-	this->offsetOfFatTableInByte = 2048;
-	this->offsetOfPartitionInByte = 8192;
+	this->offsetOfFatTableInSector = 4;
+	this->offsetOfPartitionInSector = 4;
+	this->fatStructureSizeInSector = 0;
 	this->diskPath = "E:\\";
 }
