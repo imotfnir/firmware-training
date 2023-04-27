@@ -68,6 +68,7 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	TRACE(_T("totalSectors32: 0x%X\n"), bootSector.totalSectors32);
 	bootSector.fatSize32 = GetFatTableSizeSectors(bootSector.totalSectors32, bootSector.sectorsPerCluster); // ToDo
 	TRACE(_T("fatSize32: 0x%X\n"), bootSector.fatSize32);
+
 	bootSector.extFlags = 0x0;
 	bootSector.fsVersion = 0x2;
 	bootSector.firstRootCluster = 0x2;
@@ -96,38 +97,17 @@ BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config)
 
 DWORD GetDiskSizeSectors(HANDLE dev)
 {
-	int status;
-	ULONG length = 0;
-	DWORD bytesReturn;
-	SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE sptd;
-	BYTE read_size_buf[64 * 1024 + 10];
-	sptd.sptd.Length = sizeof(SCSI_PASS_THROUGH_DIRECT);
-	sptd.sptd.PathId = 0;
-	sptd.sptd.TargetId = 1;
-	sptd.sptd.Lun = 0;
-	sptd.sptd.CdbLength = 10;
-	sptd.sptd.DataIn = SCSI_IOCTL_DATA_IN;
-	sptd.sptd.SenseInfoLength = 24;
-	sptd.sptd.DataTransferLength = 8;
-	sptd.sptd.TimeOutValue = 2;
-	sptd.sptd.DataBuffer = read_size_buf;
-	sptd.sptd.SenseInfoOffset = offsetof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE, abRequestSense);
-	sptd.sptd.Cdb[0] = 0x25; // opcode: Read storage volume
-	length = sizeof(SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE);
-	status = DeviceIoControl(dev,
-							 IOCTL_SCSI_PASS_THROUGH_DIRECT,
-							 &sptd,
-							 length,
-							 &sptd,
-							 length,
-							 &bytesReturn,
-							 NULL);
-	if (0 == status)
-	{
-		return 0;
-	}
-	int sectors = read_size_buf[0] * (1 << 24) + read_size_buf[1] * (1 << 16) + read_size_buf[2] * (1 << 8) + read_size_buf[3] + 1;
-	return sectors;
+	DISK_GEOMETRY diskGeometry;
+	BOOL status;
+	DWORD returnStatus;
+	status = DeviceIoControl(dev, IOCTL_DISK_GET_DRIVE_GEOMETRY, NULL, 0, &diskGeometry, sizeof(diskGeometry), &returnStatus, NULL);
+	TRACE(_T("Cylinders: %d\n", Cylinders));
+	TRACE(_T("MediaType: %d\n", MediaType));
+	TRACE(_T("TracksPerCylinder: %d\n", TracksPerCylinder));
+	TRACE(_T("SectorsPerTrack: %d\n", SectorsPerTrack));
+	TRACE(_T("BytesPerSector: %d\n", BytesPerSector));
+
+	return 0;
 }
 
 DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster)
@@ -147,8 +127,9 @@ DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster)
 CFileSystemConfig::CFileSystemConfig()
 {
 	this->isMBR = false;
-	this->clusterSizeInByte = 0;
+	this->clusterSizeInByte = 8192;
 	this->fileSystem = Fat32;
-	this->offsetOfFatTableInByte = 0;
-	this->offsetOfPartitionInByte = 0;
+	this->offsetOfFatTableInByte = 2048;
+	this->offsetOfPartitionInByte = 8192;
+	this->diskPath = "";
 }

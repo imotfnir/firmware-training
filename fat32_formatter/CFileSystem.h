@@ -97,6 +97,7 @@ public:
 	FILE_SYSTEM_TYPE fileSystem;
 	UINT offsetOfFatTableInByte;
 	UINT offsetOfPartitionInByte;
+	CString diskPath;
 };
 
 MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config);
