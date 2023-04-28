@@ -141,7 +141,8 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	}
 
 	fatOffset.SetWindowText(_T("4"));
-	partitionOffset.SetWindowText(_T("4"));
+	partitionOffset.SetWindowText(_T("0"));
+	partitionOffset.EnableWindow(false);
 
 	return TRUE; // return TRUE  unless you set the focus to a control
 }
@@ -195,7 +196,6 @@ HCURSOR Cfat32formatterDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
-
 void Cfat32formatterDlg::OnCbnSelchangeComboClusterSize()
 {
 	CString value;
@@ -232,10 +232,19 @@ void Cfat32formatterDlg::OnBnClickedCheckMbr()
 {
 	if (mbrCheckBox.GetCheck())
 	{
+		CString value;
+
 		fileSystemConfig.isMBR = true;
+		partitionOffset.EnableWindow(true);
+
+		partitionOffset.GetWindowText(value);
+		fileSystemConfig.offsetOfPartitionInSector = _ttoi(value);
+
 		return;
 	}
 	fileSystemConfig.isMBR = false;
+	partitionOffset.EnableWindow(false);
+	fileSystemConfig.offsetOfPartitionInSector = 0;
 }
 
 void Cfat32formatterDlg::OnCbnSelchangeComboDiskPath()
@@ -247,7 +256,8 @@ void Cfat32formatterDlg::OnCbnSelchangeComboDiskPath()
 
 void Cfat32formatterDlg::OnBnClickedReaddisk()
 {
-	TRACE(fileSystemConfig.diskPath);
+	fileSystemConfig.InitConfig();
+
 	HANDLE storageDevice = CreateFile(
 		fileSystemConfig.diskPath,
 		(GENERIC_READ | GENERIC_WRITE),
@@ -258,6 +268,7 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 		NULL);
 	if (storageDevice == INVALID_HANDLE_VALUE)
 	{
+		AfxMessageBox(_T("Failed to open drive"), MB_ICONWARNING | MB_OK);
 		TRACE(_T("Failed to open drive\n"));
 		return;
 	}
@@ -267,6 +278,7 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 	InitMbrStructure(storageDevice, fileSystemConfig);
 	InitFat32BootSector(storageDevice, fileSystemConfig);
 	InitFat32FsInfo(storageDevice, fileSystemConfig);
+	InitFat32FatStructure(storageDevice, fileSystemConfig);
 
 	DeviceUnLock(storageDevice);
 	CloseHandle(storageDevice);

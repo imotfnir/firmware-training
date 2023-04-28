@@ -27,10 +27,9 @@ MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config)
 BOOL InitMbrStructure(HANDLE dev, CFileSystemConfig config)
 {
 	MBR_STRUCTURE mbr = PrepareMbrStructure(config);
-	BYTE *writeBuffer = (BYTE *)&mbr;
 
-	PrintBuffer(writeBuffer, sizeof(mbr));
-	// ScsiWrite(dev, writeBuffer, 0, 1);
+	PrintBuffer((BYTE *)&mbr, sizeof(mbr));
+	ScsiWrite(dev, (BYTE *)&mbr, 0, 1);
 
 	return true;
 }
@@ -54,16 +53,9 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	bootSector.fatSize16 = 0x0;
 	bootSector.sectorsPerTrack = 0x3F;
 	bootSector.numberOfHeads = 0xFF;
-	if (!config.isMBR)
-	{
-		bootSector.hiddenSectors = 0x0;
-	}
-	else
-	{
-		bootSector.hiddenSectors = config.offsetOfPartitionInSector;
-	}
-	bootSector.totalSectors32 = GetDiskSizeSectors(dev) - bootSector.hiddenSectors;
-	bootSector.fatSize32 = GetFatTableSizeSectors(bootSector.totalSectors32, bootSector.sectorsPerCluster); // ToDo
+	bootSector.hiddenSectors = config.offsetOfPartitionInSector;
+	bootSector.totalSectors32 = GetDiskSizeSectors(dev) - config.offsetOfPartitionInSector;
+	bootSector.fatSize32 = GetFatTableSizeSectors(GetDiskSizeSectors(dev) - config.offsetOfPartitionInSector, bootSector.sectorsPerCluster); // ToDo
 	bootSector.extFlags = 0x0;
 	bootSector.fsVersion = 0x2;
 	bootSector.firstRootCluster = 0x2;
@@ -85,6 +77,8 @@ BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	FAT32_BOOT_SECTOR bootSector = PrepareFat32BootSector(dev, config);
 
 	PrintBuffer((BYTE *)&bootSector, sizeof(bootSector));
+
+	ScsiWrite(dev, (BYTE *)&bootSector, config.offsetOfPartitionInSector, 1);
 	return true;
 }
 
@@ -179,16 +173,41 @@ BOOL InitFat32FsInfo(HANDLE dev, CFileSystemConfig config)
 	FAT32_FSINFO fsInfo = PrepareFat32FsInfo(dev, config);
 
 	PrintBuffer((BYTE *)&fsInfo, sizeof(fsInfo));
+
+	ScsiWrite(dev, (BYTE *)&fsInfo, config.offsetOfPartitionInSector + 1, 1);
 	return true;
 }
 
 BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 {
 	FAT32_FAT_TABLE fatStructure = {0};
-	UINT fatStructureStartingOffset;
+	UINT fatStructureStartingSector;
+	UINT fatStructureSize;
+	BYTE zeros[SECTOR_SIZE] = {0};
 
-	fatStructureStartingOffset = config.offsetOfFatTableInSector + config.offsetOfPartitionInSector;
+	fatStructureStartingSector = config.offsetOfPartitionInSector + config.offsetOfFatTableInSector;
+	fatStructureSize = (UINT)GetFatTableSizeSectors(GetDiskSizeSectors(dev) - config.offsetOfPartitionInSector, config.clusterSizeInByte / SECTOR_SIZE);
 
+	fatStructure.entry[0] = 0x0FFFFFF8;
+	fatStructure.entry[1] = 0xFFFFFFFF;
+	fatStructure.entry[2] = 0x0FFFFFFF;
+
+	// Clear fat structure
+	for (UINT i = 0; i < 2 * fatStructureSize; i++) // 2 FAT Table
+	{
+		ScsiWrite(dev, zeros, fatStructureStartingSector + i, 1);
+	}
+
+	// Fill fat1, fat2
+	ScsiWrite(dev, (BYTE *)&fatStructure, fatStructureStartingSector, 1);
+	ScsiWrite(dev, (BYTE *)&fatStructure, fatStructureStartingSector + fatStructureSize, 1);
+	PrintBuffer((BYTE *)&fatStructure, sizeof(fatStructure));
+
+	return true;
+}
+
+BOOL ClearRootDirectory(HANDLE dev, CFileSystemConfig config)
+{
 	return true;
 }
 
@@ -199,5 +218,17 @@ CFileSystemConfig::CFileSystemConfig()
 	this->offsetOfFatTableInSector = 4;
 	this->offsetOfPartitionInSector = 4;
 	this->fatStructureSizeInSector = 0;
-	this->diskPath = "E:\\";
+	this->offsetOfDataRegionInSector = 0;
+	this->offsetOfFatStructureInSector = 0;
+	this->diskPath = "";
+}
+
+BOOL CFileSystemConfig::InitConfig()
+{
+	if (this->diskPath == "")
+	{
+		AfxMessageBox(_T("Please select disk path"), MB_ICONWARNING | MB_OK);
+		return false;
+	}
+	return true;
 }

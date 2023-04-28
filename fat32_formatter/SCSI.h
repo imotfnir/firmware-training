@@ -21,11 +21,10 @@ typedef struct _SCSI_PASS_THROUGH_DIRECT_WITH_REQSENSE
 
 extern DWORD ScsiCmdSend(HANDLE dev, _stCDB cdb, BYTE direction, BYTE cdbLen, void *data, DWORD dataXferLen, DWORD timeoutSecond = 60);
 
-DWORD ScsiRead(HANDLE dev, BYTE *readBuffer, UINT offsetSector, UINT readSize);
-DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSize);
+DWORD ScsiRead(HANDLE dev, BYTE *readBuffer, UINT offsetSector, UINT readSizeSector);
+DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSizeSector);
 BOOL PrintBuffer(BYTE *buffer, UINT bufferLen);
 BOOL Format(HANDLE dev, CFileSystemConfig config);
 BOOL InitPartitionTable(HANDLE dev);
-BOOL InitFatFileSystem(HANDLE dev);
 
 #endif // SCSI_H

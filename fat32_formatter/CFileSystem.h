@@ -69,8 +69,7 @@ typedef struct
 
 typedef struct
 {
-	DWORD Entry0;
-	DWORD Entry1;
+	DWORD entry[128];
 } FAT32_FAT_TABLE;
 
 typedef struct
@@ -92,7 +91,11 @@ public:
 	UINT offsetOfFatTableInSector;
 	UINT offsetOfPartitionInSector;
 	UINT fatStructureSizeInSector;
+	UINT offsetOfDataRegionInSector;
+	UINT offsetOfFatStructureInSector;
 	CString diskPath;
+	BOOL InitConfig();
+	BOOL IsConfigValid();
 };
 
 MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config);
@@ -102,12 +105,12 @@ BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config);
 FAT32_FSINFO PrepareFat32FsInfo(HANDLE dev, CFileSystemConfig config);
 BOOL InitFat32FsInfo(HANDLE dev, CFileSystemConfig config);
 BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config);
+BOOL ClearRootDirectory(HANDLE dev, CFileSystemConfig config);
 
 DWORD GetDiskSizeSectors(HANDLE dev);
 DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster);
 BOOL DeviceLock(HANDLE dev);
 BOOL DeviceUnLock(HANDLE dev);
 DWORD GetVolumeId();
-
 
 #endif // C_FILE_SYSTEM_H

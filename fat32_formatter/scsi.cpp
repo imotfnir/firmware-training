@@ -57,7 +57,7 @@ DWORD ScsiCmdSend(HANDLE dev, _stCDB cdb, BYTE direction, BYTE cdbLen, void *dat
 	return GetLastError();
 }
 
-DWORD ScsiRead(HANDLE dev, BYTE *readBuffer, UINT offsetSector, UINT readSize)
+DWORD ScsiRead(HANDLE dev, BYTE *readBuffer, UINT offsetSector, UINT readSizeSector)
 {
 	_stCDB cdb = {0};
 	cdb.bCDB[0] = 0x28;
@@ -67,15 +67,16 @@ DWORD ScsiRead(HANDLE dev, BYTE *readBuffer, UINT offsetSector, UINT readSize)
 	cdb.bCDB[4] = (offsetSector >> 8) & 0xff;
 	cdb.bCDB[5] = offsetSector & 0xff;
 	cdb.bCDB[6] = 0x00;
-	cdb.bCDB[7] = (readSize >> 8) & 0xff;
-	cdb.bCDB[8] = readSize & 0xff;
+	cdb.bCDB[7] = (readSizeSector >> 8) & 0xff;
+	cdb.bCDB[8] = readSizeSector & 0xff;
 	cdb.bCDB[9] = 0x00;
 
 	return ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_IN, 10, (void *)readBuffer, SECTOR_SIZE, 2);
 }
 
-DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSize)
+DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSizeSector)
 {
+	return 0;
 	_stCDB cdb = {0};
 	cdb.bCDB[0] = 0x2A;
 	cdb.bCDB[1] = 0x00;
@@ -84,11 +85,11 @@ DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSize
 	cdb.bCDB[4] = (offsetSector >> 8) & 0xff;
 	cdb.bCDB[5] = offsetSector & 0xff;
 	cdb.bCDB[6] = 0x00;
-	cdb.bCDB[7] = (writeSize >> 8) & 0xff;
-	cdb.bCDB[8] = writeSize & 0xff;
+	cdb.bCDB[7] = (writeSizeSector >> 8) & 0xff;
+	cdb.bCDB[8] = writeSizeSector & 0xff;
 	cdb.bCDB[9] = 0x00;
 
-	return ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_OUT, 10, (void *)writeBuffer, SECTOR_SIZE * writeSize, 2);
+	return ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_OUT, 10, (void *)writeBuffer, SECTOR_SIZE * writeSizeSector, 2);
 }
 
 BOOL PrintBuffer(BYTE *buffer, UINT bufferLen)
