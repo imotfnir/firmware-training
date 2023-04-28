@@ -46,7 +46,7 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	bootSector.bytesPerSector = SECTOR_SIZE;
 	bootSector.sectorsPerCluster = config.clusterSizeInByte / SECTOR_SIZE;
 	bootSector.reservedSectorCount = config.fat32ReversedSizeInSector; // ToDo
-	bootSector.numOfFats = 0x2;
+	bootSector.numOfFats = config.numberOfFat;
 	bootSector.rootEntryCount = 0x0;
 	bootSector.totalSectors16 = 0x0;
 	bootSector.media = 0xF0;
