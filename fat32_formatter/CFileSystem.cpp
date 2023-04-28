@@ -183,7 +183,7 @@ BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 	FAT32_FAT_TABLE fatStructure = {0};
 	UINT fatStructureStartingSector;
 	UINT fatStructureSize;
-	BYTE zeros[SECTOR_SIZE] = {0};
+	BYTE zeros[SECTOR_SIZE * 0x100] = {0};
 
 	fatStructureStartingSector = config.offsetOfPartitionInSector + config.fat32ReversedSizeInSector;
 	fatStructureSize = (UINT)GetFatTableSizeSectors(GetDiskSizeSectors(dev) - config.offsetOfPartitionInSector, config.clusterSizeInByte / SECTOR_SIZE);
@@ -193,9 +193,9 @@ BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 	fatStructure.entry[2] = 0x0FFFFFFF;
 
 	// Clear fat structure
-	for (UINT i = 0; i < 2 * fatStructureSize; i++) // 2 FAT Table
+	for (UINT i = 0; i < (2 * fatStructureSize) / 0x100; i++) // 2 FAT Table
 	{
-		ScsiWrite(dev, zeros, fatStructureStartingSector + i, 1);
+		ScsiWrite(dev, zeros, fatStructureStartingSector + i * 0x100, 0x100);
 	}
 
 	// Fill fat1, fat2
@@ -208,14 +208,17 @@ BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 
 BOOL ClearRootDirectory(HANDLE dev, CFileSystemConfig config)
 {
-	BYTE zeros[SECTOR_SIZE] = {0};
-
+	BYTE zeros[SECTOR_SIZE * 0x80] = {0};
 	// Clear first cluster of data region
-	for (size_t i = 0; i < config.clusterSizeInByte; i++)
-	{
-		ScsiWrite(dev, zeros, config.offsetOfDataRegionInSector + i, 1);
-	}
+	ScsiWrite(dev, zeros, config.offsetOfDataRegionInSector, 0x80);
+	return true;
+}
 
+BOOL ClearFat32ReservedRegion(HANDLE dev, CFileSystemConfig config)
+{
+	BYTE zeros[SECTOR_SIZE * 0x100] = {0};
+	// Clear fat reserved region
+	ScsiWrite(dev, zeros, config.offsetOfPartitionInSector, 0x100);
 	return true;
 }
 
@@ -223,7 +226,7 @@ CFileSystemConfig::CFileSystemConfig()
 {
 	this->isMBR = false;
 	this->clusterSizeInByte = 8192;
-	this->fat32ReversedSizeInSector = 4;
+	this->fat32ReversedSizeInSector = 32;
 	this->offsetOfPartitionInSector = 0;
 	this->diskPath = "";
 	this->numberOfFat = 2;
@@ -259,6 +262,21 @@ BOOL CFileSystemConfig::IsConfigValid()
 	if (this->diskPath == "")
 	{
 		AfxMessageBox(_T("Please select disk path"), MB_ICONWARNING | MB_OK);
+		return false;
+	}
+
+	if (this->isMBR)
+	{
+		if (this->offsetOfPartitionInSector < 8)
+		{
+			AfxMessageBox(_T("Offset of partition can not less than 8"), MB_ICONWARNING | MB_OK);
+			return false;
+		}
+	}
+
+	if (this->fat32ReversedSizeInSector < 32)
+	{
+		AfxMessageBox(_T("Reserved of partition can not less than 32"), MB_ICONWARNING | MB_OK);
 		return false;
 	}
 	return true;

@@ -7,7 +7,6 @@
 
 #include "devioctl.h"
 
-
 //  bDirection have 3 type
 //  SCSI_IOCTL_DATA_OUT: for write command
 //  SCSI_IOCTL_DATA_IN: for read command
@@ -76,7 +75,7 @@ DWORD ScsiRead(HANDLE dev, BYTE *readBuffer, UINT offsetSector, UINT readSizeSec
 
 DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSizeSector)
 {
-	return 0;
+	TRACE(_T("Write setor: 0x%X, Len: 0x%X\n"), offsetSector, writeSizeSector);
 	_stCDB cdb = {0};
 	cdb.bCDB[0] = 0x2A;
 	cdb.bCDB[1] = 0x00;

@@ -108,6 +108,7 @@ FAT32_FSINFO PrepareFat32FsInfo(HANDLE dev, CFileSystemConfig config);
 BOOL InitFat32FsInfo(HANDLE dev, CFileSystemConfig config);
 BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config);
 BOOL ClearRootDirectory(HANDLE dev, CFileSystemConfig config);
+BOOL ClearFat32ReservedRegion(HANDLE dev, CFileSystemConfig config);
 
 DWORD GetDiskSizeSectors(HANDLE dev);
 DWORD GetFatTableSizeSectors(DWORD dataSizeSector, BYTE sectorPerCluster);

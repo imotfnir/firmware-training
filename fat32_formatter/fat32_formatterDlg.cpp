@@ -140,7 +140,7 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 		}
 	}
 
-	fatOffset.SetWindowText(_T("4"));
+	fatOffset.SetWindowText(_T("32"));
 	partitionOffset.SetWindowText(_T("0"));
 	partitionOffset.EnableWindow(false);
 
@@ -283,7 +283,11 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 
 	DeviceLock(storageDevice);
 
-	InitMbrStructure(storageDevice, fileSystemConfig);
+	if (fileSystemConfig.isMBR)
+	{
+		InitMbrStructure(storageDevice, fileSystemConfig);
+	}
+	ClearFat32ReservedRegion(storageDevice, fileSystemConfig);
 	InitFat32BootSector(storageDevice, fileSystemConfig);
 	InitFat32FsInfo(storageDevice, fileSystemConfig);
 	InitFat32FatStructure(storageDevice, fileSystemConfig);
