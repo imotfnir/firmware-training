@@ -45,7 +45,7 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	memcpy(bootSector.oemName, "MSDOS5.0", sizeof(FAT32_BOOT_SECTOR::oemName));
 	bootSector.bytesPerSector = SECTOR_SIZE;
 	bootSector.sectorsPerCluster = config.clusterSizeInByte / SECTOR_SIZE;
-	bootSector.reservedSectorCount = config.offsetOfFatTableInSector; // ToDo
+	bootSector.reservedSectorCount = config.fat32ReversedSizeInSector; // ToDo
 	bootSector.numOfFats = 0x2;
 	bootSector.rootEntryCount = 0x0;
 	bootSector.totalSectors16 = 0x0;
@@ -54,8 +54,8 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	bootSector.sectorsPerTrack = 0x3F;
 	bootSector.numberOfHeads = 0xFF;
 	bootSector.hiddenSectors = config.offsetOfPartitionInSector;
-	bootSector.totalSectors32 = GetDiskSizeSectors(dev) - config.offsetOfPartitionInSector;
-	bootSector.fatSize32 = GetFatTableSizeSectors(GetDiskSizeSectors(dev) - config.offsetOfPartitionInSector, bootSector.sectorsPerCluster); // ToDo
+	bootSector.totalSectors32 = config.fat32FileSystemTotalSizeInSector;
+	bootSector.fatSize32 = config.fatStructureSizeInSector;
 	bootSector.extFlags = 0x0;
 	bootSector.fsVersion = 0x2;
 	bootSector.firstRootCluster = 0x2;
@@ -92,13 +92,13 @@ DWORD GetDiskSizeSectors(HANDLE dev)
 	if (!DeviceIoControl(dev, IOCTL_DISK_GET_LENGTH_INFO, NULL, 0, &lengthInfo, sizeof(lengthInfo), &returnStatus, NULL))
 	{
 		TRACE(_T("Failed to get disk length!\n"));
+		AfxMessageBox(_T("Failed to get disk length!"), MB_ICONWARNING | MB_OK);
 		return 0;
 	}
 
 	diskSizeByte = lengthInfo.Length.QuadPart;
 	diskSizeSector = (DWORD)(diskSizeByte / SECTOR_SIZE);
-	TRACE(_T("Disk size: 0x%llX B\n"), diskSizeByte);
-	TRACE(_T("Disk size: 0x%X Sector\n"), diskSizeSector);
+
 	if (diskSizeByte >= 0x20000000000U)
 	{
 		return 0xFFFFFFFFU;
@@ -185,7 +185,7 @@ BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 	UINT fatStructureSize;
 	BYTE zeros[SECTOR_SIZE] = {0};
 
-	fatStructureStartingSector = config.offsetOfPartitionInSector + config.offsetOfFatTableInSector;
+	fatStructureStartingSector = config.offsetOfPartitionInSector + config.fat32ReversedSizeInSector;
 	fatStructureSize = (UINT)GetFatTableSizeSectors(GetDiskSizeSectors(dev) - config.offsetOfPartitionInSector, config.clusterSizeInByte / SECTOR_SIZE);
 
 	fatStructure.entry[0] = 0x0FFFFFF8;
@@ -208,6 +208,14 @@ BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 
 BOOL ClearRootDirectory(HANDLE dev, CFileSystemConfig config)
 {
+	BYTE zeros[SECTOR_SIZE] = {0};
+
+	// Clear first cluster of data region
+	for (size_t i = 0; i < config.clusterSizeInByte; i++)
+	{
+		ScsiWrite(dev, zeros, config.offsetOfDataRegionInSector + i, 1);
+	}
+
 	return true;
 }
 
@@ -215,15 +223,38 @@ CFileSystemConfig::CFileSystemConfig()
 {
 	this->isMBR = false;
 	this->clusterSizeInByte = 8192;
-	this->offsetOfFatTableInSector = 4;
-	this->offsetOfPartitionInSector = 4;
+	this->fat32ReversedSizeInSector = 4;
+	this->offsetOfPartitionInSector = 0;
+	this->diskPath = "";
+	this->numberOfFat = 2;
+	// init by InitConfig
 	this->fatStructureSizeInSector = 0;
 	this->offsetOfDataRegionInSector = 0;
 	this->offsetOfFatStructureInSector = 0;
-	this->diskPath = "";
+	this->fat32FileSystemTotalSizeInSector = 0;
 }
 
-BOOL CFileSystemConfig::InitConfig()
+BOOL CFileSystemConfig::InitConfig(HANDLE dev)
+{
+
+	this->offsetOfFatStructureInSector = this->offsetOfPartitionInSector + this->fat32ReversedSizeInSector;
+	this->fat32FileSystemTotalSizeInSector = GetDiskSizeSectors(dev) - this->offsetOfPartitionInSector;
+	TRACE(_T("File system size: 0x%X Sector\n"), this->fat32FileSystemTotalSizeInSector);
+
+	this->fatStructureSizeInSector = GetFatTableSizeSectors(this->fat32FileSystemTotalSizeInSector, (this->clusterSizeInByte / SECTOR_SIZE));
+	TRACE(_T("Fat structure size(full): 0x%X Sector\n"), this->fatStructureSizeInSector);
+
+	DWORD dataRegionSize = this->fat32FileSystemTotalSizeInSector - this->fatStructureSizeInSector * this->numberOfFat;
+	this->fatStructureSizeInSector = GetFatTableSizeSectors(dataRegionSize, (this->clusterSizeInByte / SECTOR_SIZE));
+	TRACE(_T("Fat structure size(data): 0x%X Sector\n"), this->fatStructureSizeInSector);
+
+	this->offsetOfDataRegionInSector = this->offsetOfFatStructureInSector + this->fatStructureSizeInSector * this->numberOfFat;
+	TRACE(_T("Data region offset: 0x%X Sector\n"), this->offsetOfDataRegionInSector);
+
+	return true;
+}
+
+BOOL CFileSystemConfig::IsConfigValid()
 {
 	if (this->diskPath == "")
 	{

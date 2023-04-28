@@ -88,13 +88,15 @@ public:
 public:
 	UINT isMBR;
 	UINT clusterSizeInByte;
-	UINT offsetOfFatTableInSector;
+	UINT fat32ReversedSizeInSector;
 	UINT offsetOfPartitionInSector;
+	CString diskPath;
+	UINT numberOfFat;
 	UINT fatStructureSizeInSector;
 	UINT offsetOfDataRegionInSector;
 	UINT offsetOfFatStructureInSector;
-	CString diskPath;
-	BOOL InitConfig();
+	UINT fat32FileSystemTotalSizeInSector;
+	BOOL InitConfig(HANDLE dev);
 	BOOL IsConfigValid();
 };
 

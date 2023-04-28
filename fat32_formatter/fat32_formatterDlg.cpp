@@ -207,7 +207,7 @@ void Cfat32formatterDlg::OnBnClickedButtonShowConfig()
 {
 	TRACE(_T("Have MBR: %d\n"), fileSystemConfig.isMBR);
 	TRACE(_T("Cluster Size: %d Bytes\n"), fileSystemConfig.clusterSizeInByte);
-	TRACE(_T("Offset of FAT Table : % d Sector\n"), fileSystemConfig.offsetOfFatTableInSector);
+	TRACE(_T("Offset of FAT Table : % d Sector\n"), fileSystemConfig.fat32ReversedSizeInSector);
 	TRACE(_T("Offset of partition : %d Sector\n"), fileSystemConfig.offsetOfPartitionInSector);
 	TRACE(_T("Disk Path : %s\n"), fileSystemConfig.diskPath);
 
@@ -218,7 +218,7 @@ void Cfat32formatterDlg::OnEnChangeEditFatOffset()
 {
 	CString value;
 	fatOffset.GetWindowText(value);
-	fileSystemConfig.offsetOfFatTableInSector = _ttoi(value);
+	fileSystemConfig.fat32ReversedSizeInSector = _ttoi(value);
 }
 
 void Cfat32formatterDlg::OnEnChangeEditPartitionOffset()
@@ -256,7 +256,10 @@ void Cfat32formatterDlg::OnCbnSelchangeComboDiskPath()
 
 void Cfat32formatterDlg::OnBnClickedReaddisk()
 {
-	fileSystemConfig.InitConfig();
+	if (!fileSystemConfig.IsConfigValid())
+	{
+		return;
+	}
 
 	HANDLE storageDevice = CreateFile(
 		fileSystemConfig.diskPath,
@@ -273,12 +276,18 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 		return;
 	}
 
+	if (!fileSystemConfig.InitConfig(storageDevice))
+	{
+		return;
+	}
+
 	DeviceLock(storageDevice);
 
 	InitMbrStructure(storageDevice, fileSystemConfig);
 	InitFat32BootSector(storageDevice, fileSystemConfig);
 	InitFat32FsInfo(storageDevice, fileSystemConfig);
 	InitFat32FatStructure(storageDevice, fileSystemConfig);
+	ClearRootDirectory(storageDevice, fileSystemConfig);
 
 	DeviceUnLock(storageDevice);
 	CloseHandle(storageDevice);
