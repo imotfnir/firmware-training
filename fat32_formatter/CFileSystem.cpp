@@ -19,7 +19,7 @@ MBR_STRUCTURE PrepareMbrStructure(CFileSystemConfig config)
 	mbr.partitionRecode[0].endingChs[1] = 0xFF;
 	mbr.partitionRecode[0].endingChs[2] = 0xFF;
 	mbr.partitionRecode[0].startingLba = config.offsetOfPartitionInSector;
-	mbr.partitionRecode[0].sizeInLba = 0; // ToDo
+	mbr.partitionRecode[0].sizeInLba = config.fat32FileSystemTotalSizeInSector; // ToDo
 	mbr.signature = 0xAA55;
 	return mbr;
 }
@@ -49,7 +49,7 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	bootSector.numOfFats = config.numberOfFat;
 	bootSector.rootEntryCount = 0x0;
 	bootSector.totalSectors16 = 0x0;
-	bootSector.media = 0xF0;
+	bootSector.media = 0xF8;
 	bootSector.fatSize16 = 0x0;
 	bootSector.sectorsPerTrack = 0x3F;
 	bootSector.numberOfHeads = 0xFF;
@@ -79,6 +79,7 @@ BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	PrintBuffer((BYTE *)&bootSector, sizeof(bootSector));
 
 	ScsiWrite(dev, (BYTE *)&bootSector, config.offsetOfPartitionInSector, 1);
+	ScsiWrite(dev, (BYTE *)&bootSector, config.offsetOfPartitionInSector + 6, 1);
 	return true;
 }
 
@@ -128,14 +129,20 @@ BOOL DeviceLock(HANDLE dev)
 {
 	DWORD returnStatus;
 	if (0 == DeviceIoControl(dev, FSCTL_LOCK_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL))
+	{
+		AfxMessageBox(_T("Failed to lock device"), MB_ICONWARNING | MB_OK);
 		return false;
+	}
 	return true;
 }
 BOOL DeviceUnLock(HANDLE dev)
 {
 	DWORD returnStatus;
 	if (0 == DeviceIoControl(dev, FSCTL_UNLOCK_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL))
+	{
+		AfxMessageBox(_T("Failed to unlock device"), MB_ICONWARNING | MB_OK);
 		return false;
+	}
 	return true;
 }
 
@@ -161,8 +168,8 @@ FAT32_FSINFO PrepareFat32FsInfo(HANDLE dev, CFileSystemConfig config)
 
 	fsInfo.leadSignature = 0x41615252;
 	fsInfo.structureSignature = 0x61417272;
-	fsInfo.freeCount = 0xffffffff;
-	fsInfo.nextFree = 0xffffffff;
+	fsInfo.freeCount = config.diskSizeInSector / (config.clusterSizeInByte / SECTOR_SIZE);
+	fsInfo.nextFree = 0x3;
 	fsInfo.trailSignature = 0xaa550000;
 
 	return fsInfo;
@@ -175,6 +182,7 @@ BOOL InitFat32FsInfo(HANDLE dev, CFileSystemConfig config)
 	PrintBuffer((BYTE *)&fsInfo, sizeof(fsInfo));
 
 	ScsiWrite(dev, (BYTE *)&fsInfo, config.offsetOfPartitionInSector + 1, 1);
+	ScsiWrite(dev, (BYTE *)&fsInfo, config.offsetOfPartitionInSector + 7, 1);
 	return true;
 }
 
@@ -185,8 +193,8 @@ BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 	UINT fatStructureSize;
 	BYTE zeros[SECTOR_SIZE * 0x100] = {0};
 
-	fatStructureStartingSector = config.offsetOfPartitionInSector + config.fat32ReversedSizeInSector;
-	fatStructureSize = (UINT)GetFatTableSizeSectors(GetDiskSizeSectors(dev) - config.offsetOfPartitionInSector, config.clusterSizeInByte / SECTOR_SIZE);
+	fatStructureStartingSector = config.offsetOfFatStructureInSector;
+	fatStructureSize = config.fatStructureSizeInSector;
 
 	fatStructure.entry[0] = 0x0FFFFFF8;
 	fatStructure.entry[1] = 0xFFFFFFFF;
@@ -235,21 +243,31 @@ CFileSystemConfig::CFileSystemConfig()
 	this->offsetOfDataRegionInSector = 0;
 	this->offsetOfFatStructureInSector = 0;
 	this->fat32FileSystemTotalSizeInSector = 0;
+	this->dataRegionSizeInSector = 0;
+	this->diskSizeInSector = 0;
 }
 
 BOOL CFileSystemConfig::InitConfig(HANDLE dev)
 {
+	UINT pastDataSize = 0;
+	UINT pastFatSize = 0;
 
 	this->offsetOfFatStructureInSector = this->offsetOfPartitionInSector + this->fat32ReversedSizeInSector;
-	this->fat32FileSystemTotalSizeInSector = GetDiskSizeSectors(dev) - this->offsetOfPartitionInSector;
+	this->diskSizeInSector = GetDiskSizeSectors(dev);
+	this->fat32FileSystemTotalSizeInSector = this->diskSizeInSector - this->offsetOfPartitionInSector;
 	TRACE(_T("File system size: 0x%X Sector\n"), this->fat32FileSystemTotalSizeInSector);
-
 	this->fatStructureSizeInSector = GetFatTableSizeSectors(this->fat32FileSystemTotalSizeInSector, (this->clusterSizeInByte / SECTOR_SIZE));
-	TRACE(_T("Fat structure size(full): 0x%X Sector\n"), this->fatStructureSizeInSector);
+	TRACE(_T("Fat structure size: 0x%X Sector\n"), this->fatStructureSizeInSector);
 
-	DWORD dataRegionSize = this->fat32FileSystemTotalSizeInSector - this->fatStructureSizeInSector * this->numberOfFat;
-	this->fatStructureSizeInSector = GetFatTableSizeSectors(dataRegionSize, (this->clusterSizeInByte / SECTOR_SIZE));
-	TRACE(_T("Fat structure size(data): 0x%X Sector\n"), this->fatStructureSizeInSector);
+	while ((pastDataSize != this->dataRegionSizeInSector) || (pastFatSize != this->fatStructureSizeInSector))
+	{
+		this->dataRegionSizeInSector = this->fat32FileSystemTotalSizeInSector - this->fatStructureSizeInSector * this->numberOfFat;
+		TRACE(_T("Data region size: 0x%X Sector\n"), this->dataRegionSizeInSector);
+		this->fatStructureSizeInSector = GetFatTableSizeSectors(this->dataRegionSizeInSector, (this->clusterSizeInByte / SECTOR_SIZE));
+		TRACE(_T("Fat structure size(data): 0x%X Sector\n"), this->fatStructureSizeInSector);
+		pastDataSize = this->dataRegionSizeInSector;
+		pastFatSize = this->fatStructureSizeInSector;
+	}
 
 	this->offsetOfDataRegionInSector = this->offsetOfFatStructureInSector + this->fatStructureSizeInSector * this->numberOfFat;
 	TRACE(_T("Data region offset: 0x%X Sector\n"), this->offsetOfDataRegionInSector);
@@ -267,9 +285,9 @@ BOOL CFileSystemConfig::IsConfigValid()
 
 	if (this->isMBR)
 	{
-		if (this->offsetOfPartitionInSector < 8)
+		if (this->offsetOfPartitionInSector < 0x800)
 		{
-			AfxMessageBox(_T("Offset of partition can not less than 8"), MB_ICONWARNING | MB_OK);
+			AfxMessageBox(_T("Offset of partition can not less than 2048"), MB_ICONWARNING | MB_OK);
 			return false;
 		}
 	}

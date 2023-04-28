@@ -256,6 +256,9 @@ void Cfat32formatterDlg::OnCbnSelchangeComboDiskPath()
 
 void Cfat32formatterDlg::OnBnClickedReaddisk()
 {
+	INT status = 0;
+	DWORD returnStatus = 0;
+
 	if (!fileSystemConfig.IsConfigValid())
 	{
 		return;
@@ -276,6 +279,8 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 		return;
 	}
 
+	DeviceIoControl(storageDevice, FSCTL_ALLOW_EXTENDED_DASD_IO, NULL, 0, NULL, 0, &returnStatus, NULL);
+
 	if (!fileSystemConfig.InitConfig(storageDevice))
 	{
 		return;
@@ -283,15 +288,23 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 
 	DeviceLock(storageDevice);
 
+	BYTE zeros[SECTOR_SIZE * 0x100] = {0};
+	ScsiWrite(storageDevice, zeros, 0, 0x100);
 	if (fileSystemConfig.isMBR)
 	{
 		InitMbrStructure(storageDevice, fileSystemConfig);
 	}
-	ClearFat32ReservedRegion(storageDevice, fileSystemConfig);
+	ScsiWrite(storageDevice, zeros, fileSystemConfig.offsetOfPartitionInSector, 0x100);
 	InitFat32BootSector(storageDevice, fileSystemConfig);
 	InitFat32FsInfo(storageDevice, fileSystemConfig);
 	InitFat32FatStructure(storageDevice, fileSystemConfig);
-	ClearRootDirectory(storageDevice, fileSystemConfig);
+	ScsiWrite(storageDevice, zeros, fileSystemConfig.offsetOfDataRegionInSector, 0x100);
+
+	status = DeviceIoControl(storageDevice, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL);
+	if (!status)
+	{
+		AfxMessageBox(_T("Failed to dismount device"), MB_ICONWARNING | MB_OK);
+	}
 
 	DeviceUnLock(storageDevice);
 	CloseHandle(storageDevice);

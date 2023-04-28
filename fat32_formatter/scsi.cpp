@@ -50,9 +50,10 @@ DWORD ScsiCmdSend(HANDLE dev, _stCDB cdb, BYTE direction, BYTE cdbLen, void *dat
 								&byteReturn,
 								FALSE);
 
-	if ((sptd.sptd.ScsiStatus == 0) && (apiStatus != 0))
+	if ((sptd.sptd.ScsiStatus == 0) && (apiStatus != 0)){
 		return 0;
-
+	}
+	TRACE(_T("ScsiCmdSend Error, status: %d, scsi_status: %s\n"), apiStatus, sptd.sptd.ScsiStatus);
 	return GetLastError();
 }
 
@@ -88,7 +89,9 @@ DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSize
 	cdb.bCDB[8] = writeSizeSector & 0xff;
 	cdb.bCDB[9] = 0x00;
 
-	return ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_OUT, 10, (void *)writeBuffer, SECTOR_SIZE * writeSizeSector, 2);
+	DWORD status = ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_OUT, 10, (void *)writeBuffer, SECTOR_SIZE * writeSizeSector, 2);
+	TRACE(_T("status: %d\n"), status);
+	return status;
 }
 
 BOOL PrintBuffer(BYTE *buffer, UINT bufferLen)

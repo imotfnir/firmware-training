@@ -96,6 +96,8 @@ public:
 	UINT offsetOfDataRegionInSector;
 	UINT offsetOfFatStructureInSector;
 	UINT fat32FileSystemTotalSizeInSector;
+	UINT dataRegionSizeInSector;
+	UINT diskSizeInSector;
 	BOOL InitConfig(HANDLE dev);
 	BOOL IsConfigValid();
 };
