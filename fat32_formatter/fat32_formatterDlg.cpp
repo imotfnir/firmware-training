@@ -61,7 +61,7 @@ Cfat32formatterDlg::Cfat32formatterDlg(CWnd *pParent /*=nullptr*/)
 void Cfat32formatterDlg::DoDataExchange(CDataExchange *pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_ReadDisk, readDiskButton);
+	DDX_Control(pDX, IDC_FORMAT, readDiskButton);
 	DDX_Control(pDX, IDC_COMBO_ClUSTER_SIZE, custerSizeComboBox);
 	DDX_Control(pDX, IDC_EDIT_FAT_OFFSET, fatOffset);
 	DDX_Control(pDX, IDC_EDIT_PARTITION_OFFSET, partitionOffset);
@@ -73,7 +73,7 @@ BEGIN_MESSAGE_MAP(Cfat32formatterDlg, CDialogEx)
 ON_WM_SYSCOMMAND()
 ON_WM_PAINT()
 ON_WM_QUERYDRAGICON()
-ON_BN_CLICKED(IDC_ReadDisk, &Cfat32formatterDlg::OnBnClickedReaddisk)
+ON_BN_CLICKED(IDC_FORMAT, &Cfat32formatterDlg::OnBnClickedReaddisk)
 ON_CBN_SELCHANGE(IDC_COMBO_ClUSTER_SIZE, &Cfat32formatterDlg::OnCbnSelchangeComboClusterSize)
 
 ON_BN_CLICKED(IDC_BUTTON_SHOW_CONFIG, &Cfat32formatterDlg::OnBnClickedButtonShowConfig)
@@ -141,7 +141,7 @@ BOOL Cfat32formatterDlg::OnInitDialog()
 	}
 
 	fatOffset.SetWindowText(_T("32"));
-	partitionOffset.SetWindowText(_T("0"));
+	partitionOffset.SetWindowText(_T("2048"));
 	partitionOffset.EnableWindow(false);
 
 	return TRUE; // return TRUE  unless you set the focus to a control
@@ -283,6 +283,7 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 
 	if (!fileSystemConfig.InitConfig(storageDevice))
 	{
+		AfxMessageBox(_T("Failed to init device"), MB_ICONWARNING | MB_OK);
 		return;
 	}
 
@@ -294,11 +295,30 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 	{
 		InitMbrStructure(storageDevice, fileSystemConfig);
 	}
-	ScsiWrite(storageDevice, zeros, fileSystemConfig.offsetOfPartitionInSector, 0x100);
-	InitFat32BootSector(storageDevice, fileSystemConfig);
-	InitFat32FsInfo(storageDevice, fileSystemConfig);
-	InitFat32FatStructure(storageDevice, fileSystemConfig);
-	ScsiWrite(storageDevice, zeros, fileSystemConfig.offsetOfDataRegionInSector, 0x100);
+	if (ScsiWrite(storageDevice, zeros, fileSystemConfig.offsetOfPartitionInSector, 0x100) != 0)
+	{
+		AfxMessageBox(_T("Format fail"), MB_ICONWARNING | MB_OK);
+		return;
+	}
+	if (InitFat32BootSector(storageDevice, fileSystemConfig) != 0)
+	{
+		AfxMessageBox(_T("Format fail"), MB_ICONWARNING | MB_OK);
+		return;
+	}
+	if (InitFat32FsInfo(storageDevice, fileSystemConfig) != 0)
+	{
+		AfxMessageBox(_T("Format fail"), MB_ICONWARNING | MB_OK);
+		return;
+	}
+	if (InitFat32FatStructure(storageDevice, fileSystemConfig))
+	{
+		AfxMessageBox(_T("Format fail"), MB_ICONWARNING | MB_OK);
+		return;
+	}
+	if(ScsiWrite(storageDevice, zeros, fileSystemConfig.offsetOfDataRegionInSector, 0x100)){
+		AfxMessageBox(_T("Format fail"), MB_ICONWARNING | MB_OK);
+		return;
+	}
 
 	status = DeviceIoControl(storageDevice, FSCTL_DISMOUNT_VOLUME, NULL, 0, NULL, 0, &returnStatus, NULL);
 	if (!status)
@@ -309,5 +329,6 @@ void Cfat32formatterDlg::OnBnClickedReaddisk()
 	DeviceUnLock(storageDevice);
 	CloseHandle(storageDevice);
 
+	AfxMessageBox(_T("Format successful"), MB_ICONWARNING | MB_OK);
 	return;
 }

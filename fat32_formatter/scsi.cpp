@@ -90,7 +90,7 @@ DWORD ScsiWrite(HANDLE dev, BYTE *writeBuffer, UINT offsetSector, UINT writeSize
 	cdb.bCDB[9] = 0x00;
 
 	DWORD status = ScsiCmdSend(dev, cdb, SCSI_IOCTL_DATA_OUT, 10, (void *)writeBuffer, SECTOR_SIZE * writeSizeSector, 2);
-	TRACE(_T("status: %d\n"), status);
+	TRACE(_T("status: 0x%X\n"), status);
 	return status;
 }
 

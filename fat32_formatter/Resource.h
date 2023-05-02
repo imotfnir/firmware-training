@@ -7,7 +7,7 @@
 #define IDS_ABOUTBOX                    101
 #define IDD_FAT32_FORMATTER_DIALOG      102
 #define IDR_MAINFRAME                   128
-#define IDC_ReadDisk                    1000
+#define IDC_FORMAT                      1000
 #define IDC_CHECK_MBR                   1001
 #define IDC_COMBO_ClUSTER_SIZE          1003
 #define IDC_COMBO_CL                    1003
@@ -19,7 +19,6 @@
 #define IDC_EDIT_FAT_OFFSET             1013
 #define IDC_EDIT2                       1014
 #define IDC_EDIT_PARTITION_OFFSET       1014
-#define IDC_STATIC_DISK_DATA            1016
 #define IDC_BUTTON_SHOW_CONFIG          1017
 #define IDC_STATIC_DISK_PATH            1020
 #define IDC_COMBO_DISK_PATH             1021

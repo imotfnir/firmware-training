@@ -72,15 +72,16 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	return bootSector;
 }
 
-BOOL InitFat32BootSector(HANDLE dev, CFileSystemConfig config)
+DWORD InitFat32BootSector(HANDLE dev, CFileSystemConfig config)
 {
+	DWORD status = 0;
 	FAT32_BOOT_SECTOR bootSector = PrepareFat32BootSector(dev, config);
 
 	PrintBuffer((BYTE *)&bootSector, sizeof(bootSector));
 
-	ScsiWrite(dev, (BYTE *)&bootSector, config.offsetOfPartitionInSector, 1);
-	ScsiWrite(dev, (BYTE *)&bootSector, config.offsetOfPartitionInSector + 6, 1);
-	return true;
+	status |= ScsiWrite(dev, (BYTE *)&bootSector, config.offsetOfPartitionInSector, 1);
+	status |= ScsiWrite(dev, (BYTE *)&bootSector, config.offsetOfPartitionInSector + 6, 1);
+	return status;
 }
 
 DWORD GetDiskSizeSectors(HANDLE dev)
@@ -175,23 +176,25 @@ FAT32_FSINFO PrepareFat32FsInfo(HANDLE dev, CFileSystemConfig config)
 	return fsInfo;
 }
 
-BOOL InitFat32FsInfo(HANDLE dev, CFileSystemConfig config)
+DWORD InitFat32FsInfo(HANDLE dev, CFileSystemConfig config)
 {
+	DWORD status = 0;
 	FAT32_FSINFO fsInfo = PrepareFat32FsInfo(dev, config);
 
 	PrintBuffer((BYTE *)&fsInfo, sizeof(fsInfo));
 
-	ScsiWrite(dev, (BYTE *)&fsInfo, config.offsetOfPartitionInSector + 1, 1);
-	ScsiWrite(dev, (BYTE *)&fsInfo, config.offsetOfPartitionInSector + 7, 1);
-	return true;
+	status |= ScsiWrite(dev, (BYTE *)&fsInfo, config.offsetOfPartitionInSector + 1, 1);
+	status |= ScsiWrite(dev, (BYTE *)&fsInfo, config.offsetOfPartitionInSector + 7, 1);
+	return status;
 }
 
-BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
+DWORD InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 {
 	FAT32_FAT_TABLE fatStructure = {0};
 	UINT fatStructureStartingSector;
 	UINT fatStructureSize;
 	BYTE zeros[SECTOR_SIZE * 0x100] = {0};
+	DWORD status = 0;
 
 	fatStructureStartingSector = config.offsetOfFatStructureInSector;
 	fatStructureSize = config.fatStructureSizeInSector;
@@ -203,15 +206,15 @@ BOOL InitFat32FatStructure(HANDLE dev, CFileSystemConfig config)
 	// Clear fat structure
 	for (UINT i = 0; i < (2 * fatStructureSize) / 0x100; i++) // 2 FAT Table
 	{
-		ScsiWrite(dev, zeros, fatStructureStartingSector + i * 0x100, 0x100);
+		status |= ScsiWrite(dev, zeros, fatStructureStartingSector + i * 0x100, 0x100);
 	}
 
 	// Fill fat1, fat2
-	ScsiWrite(dev, (BYTE *)&fatStructure, fatStructureStartingSector, 1);
-	ScsiWrite(dev, (BYTE *)&fatStructure, fatStructureStartingSector + fatStructureSize, 1);
+	status |= ScsiWrite(dev, (BYTE *)&fatStructure, fatStructureStartingSector, 1);
+	status |= ScsiWrite(dev, (BYTE *)&fatStructure, fatStructureStartingSector + fatStructureSize, 1);
 	PrintBuffer((BYTE *)&fatStructure, sizeof(fatStructure));
 
-	return true;
+	return status;
 }
 
 BOOL ClearRootDirectory(HANDLE dev, CFileSystemConfig config)
