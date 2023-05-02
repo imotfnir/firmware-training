@@ -57,7 +57,7 @@ FAT32_BOOT_SECTOR PrepareFat32BootSector(HANDLE dev, CFileSystemConfig config)
 	bootSector.totalSectors32 = config.fat32FileSystemTotalSizeInSector;
 	bootSector.fatSize32 = config.fatStructureSizeInSector;
 	bootSector.extFlags = 0x0;
-	bootSector.fsVersion = 0x2;
+	bootSector.fsVersion = 0x0;
 	bootSector.firstRootCluster = 0x2;
 	bootSector.fsInfo = 0x1;
 	bootSector.backupBootSector = 0x6;
