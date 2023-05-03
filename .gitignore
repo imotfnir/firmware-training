@@ -1,4 +1,6 @@
 .vscode/
+temperature_humidity_sensor/*.bak
+temperature_humidity_sensor/8051
 
 # Created by https://www.toptal.com/developers/gitignore/api/vs
 # Edit at https://www.toptal.com/developers/gitignore?templates=vs
