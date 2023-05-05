@@ -38,13 +38,13 @@ Options 1,0,0  // Target 'Target 1'
  OutName (8051)
  GenApp=1
  GenLib=0
- GenHex=0
+ GenHex=1
  Debug=1
  Browse=1
  LstDir (.\)
  HexSel=0
  MG32K=0
- TGMORE=0
+ TGMORE=1
  RunUsr 0 0 <>
  RunUsr 1 0 <>
  BrunUsr 0 0 <>
@@ -59,7 +59,7 @@ Options 1,0,0  // Target 'Target 1'
  XT51FL=0
  CBANKS5=0
  XBANKS5=0
- RCB51 { 0,0,0,0,0,0,0,0,0 }
+ RCB51 { 0,0,0,0,0,255,255,0,0 }
  RXB51 { 0,0,0,0,0,0,0,0,0 }
  OCM51 { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
  OCR51 { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }
@@ -114,10 +114,10 @@ Options 1,0,0  // Target 'Target 1'
  LX51DAS ()
  LX51IDS ()
   OPTDL (S8051.DLL)()(DP51.DLL)(-pAT52)(S8051.DLL)()(TP51.DLL)(-pAT52)
-  OPTDBG 48125,0,()()()()()()()()()() ()()()()
- FLASH1 { 0,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0 }
+  OPTDBG 48125,0,()()()()()()()()()() (BIN\MON51.DLL)()()()
+ FLASH1 { 1,0,0,0,0,0,0,0,255,255,255,255,0,0,0,0,0,0,0,0 }
  FLASH2 ()
- FLASH3 ()
+ FLASH3 ("" ())
  FLASH4 ()
 EndOpt
 
