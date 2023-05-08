@@ -40,34 +40,43 @@ void init_uart()
 
 void stop()
 {
-    while (1)
+    while (TRUE)
         ;
 }
 
 uint32_t get_am2302_data()
 {
     uint32_t value = 0;
+    uint8_t checksum = 0;
     uint8_t bits = 0;
     for (bits = 0; bits < 32; bits++)
     {
 
-        while (AM2302_PIN == LOW)
+        while (AM2302_PIN == LOW) // Sensor pulls low 50us
             ;
         delay_13us();
-        if (AM2302_PIN == LOW)
-        {
-            printf("Get data failed");
-            return 0xFFFFFFFF;
-        }
         delay_13us();
-        delay_13us();
+        delay_13us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
         value <<= 1;
         if (AM2302_PIN == HIGH)
         {
             value |= 1;
         }
     }
+    for (bits = 0; bits < 8; bits++)
+    {
 
+        while (AM2302_PIN == LOW)
+            ;
+        delay_13us();
+        delay_13us();
+        delay_13us();
+        checksum <<= 1;
+        if (AM2302_PIN == HIGH)
+        {
+            checksum |= 1;
+        }
+    }
     return value;
 }
 
@@ -79,8 +88,7 @@ void main()
     delay_ms(3000);
 
     AM2302_PIN = LOW;
-    delay_13us();
-    delay_13us();
+    delay_ms(20);
     AM2302_PIN = HIGH;
     delay_13us();
     delay_13us();
@@ -91,19 +99,16 @@ void main()
         printf("AM2302 no response\n");
         return;
     }
-    while (AM2302_PIN == LOW)
-    {
-        printf("AM2302_PIN = Low\n");
-    }
-    while (AM2302_PIN == HIGH)
-    {
-        printf("AM2302_PIN  High\n");
-    }
 
+    while (AM2302_PIN == LOW)
+        ;
+    while (AM2302_PIN == HIGH)
+        ;
     value = get_am2302_data();
 
-    printf("AM2302_PIN = 0x%X\n", value);
+    printf("AM2302 data = 0x%llX\n", value);
+    // printf("AM2302 checksum = 0x%X\n", data.checksum);
 
-    stop();
+    // stop();
     return;
 }
