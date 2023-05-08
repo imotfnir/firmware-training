@@ -4,14 +4,16 @@
 #define TRUE 1
 #define FALSE 0
 
-#define XTAL_FEQ 11059200
-#define CYCLE_PER_MS 921 // 1ms / (12 / 11.0592MHz) = 921.6
+typedef char int8_t;
+typedef int int16_t;
+typedef long int32_t;
+typedef unsigned char uint8_t;
+typedef unsigned int uint16_t;
+typedef unsigned long uint32_t;
 
-typedef char int8;
-typedef int int16;
-typedef long int32;
-typedef unsigned char uint8;
-typedef unsigned int uint16;
-typedef unsigned long uint32;
+#define CYCLE_PER_MS 921 // 1ms / (12 / 11.0592MHz) = 921.6
+#define AM2302_PIN P2_0
+#define HIGH 1
+#define LOW 0
 
 #endif // _MY_LIB_H_
