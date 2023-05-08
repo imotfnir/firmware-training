@@ -44,8 +44,9 @@ void stop()
         ;
 }
 
-uint32_t get_am2302_data()
+AM2302_DATA get_am2302_data()
 {
+    AM2302_DATA result = {0};
     uint32_t value = 0;
     uint8_t checksum = 0;
     uint8_t bits = 0;
@@ -77,12 +78,28 @@ uint32_t get_am2302_data()
             checksum |= 1;
         }
     }
-    return value;
+    result.sensor_data = *(RH_TEMP *)&value;
+    result.checksum = checksum;
+    return result;
+}
+
+bool is_data_valid(AM2302_DATA value)
+{
+    uint8_t result = 0;
+    result = (uint8_t)((value.sensor_data.humidity & 0xFF) + ((value.sensor_data.humidity >> 8) & 0xFF) + (value.sensor_data.temperature & 0xFF) + ((value.sensor_data.temperature >> 8) & 0xFF));
+
+    printf("result = %x\n", result & 0xFF);
+    if (result != value.checksum)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 void main()
 {
-    uint32_t value = 0;
+    AM2302_DATA value = {0};
 
     init_uart();
     delay_ms(3000);
@@ -106,9 +123,14 @@ void main()
         ;
     value = get_am2302_data();
 
-    printf("AM2302 data = 0x%llX\n", value);
-    // printf("AM2302 checksum = 0x%X\n", data.checksum);
-
+    printf("AM2302 data = 0x%llX\n", *(RH_TEMP *)&value.sensor_data);
+    printf("AM2302 checksum = %x\n", value.checksum & 0xFF);
+    printf("humidity = %u\n", value.sensor_data.humidity);
+    printf("temperature = %u\n", value.sensor_data.temperature);
+    if (!is_data_valid(value))
+    {
+        printf("CHECKSUM WRONG");
+    }
     // stop();
     return;
 }
