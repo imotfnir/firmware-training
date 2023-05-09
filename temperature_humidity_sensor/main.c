@@ -3,24 +3,24 @@
 
 #include <stdio.h>
 
-void delay_13us() // This function use 12 clock cycle =~ 13 us
-{
-    uint8_t i;
-    for (i = 0; i < 2; i++)
-        ;
-}
-
-void delay_21us()
+void delay_22us() // 21 clock cycle
 {
     uint8_t i;
     for (i = 0; i < 5; i++)
         ;
 }
 
-void delay_30us()
+void delay_29us() // 27 clock cycle
 {
     uint8_t i;
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 7; i++)
+        ;
+}
+
+void delay_52us() // 28 clock cycle
+{
+    uint8_t i;
+    for (i = 0; i < 14; i++)
         ;
 }
 
@@ -69,7 +69,7 @@ uint32_t get_am2302_data()
         value <<= 1;              //  9 clock cycle
         while (AM2302_PIN == LOW) // Sensor pulls low 50us
             ;
-        delay_21us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
+        delay_22us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
         if (AM2302_PIN == HIGH)
         {
             value |= 1; //  9 clock cycle
@@ -83,7 +83,7 @@ uint32_t get_am2302_data()
         checksum <<= 1;           //  3 clock cycle
         while (AM2302_PIN == LOW) // Sensor pulls low 50us
             ;
-        delay_30us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
+        delay_29us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
         if (AM2302_PIN == HIGH)
         {
             checksum |= 1; //  2 clock cycle
@@ -92,9 +92,7 @@ uint32_t get_am2302_data()
         }
     }
 
-    printf("data = 0x%llX, ", value);
-    printf("rh = %d, ", (int16_t)(value >> 16));
-    printf("temp = %d, ", (int16_t)(value & 0xFFFF));
+    printf("raw data = 0x%llX, ", value);
     printf("get checksum = 0x%X, ", (int16_t)checksum);
     printf("cal checksum = 0x%X, \n", (int16_t)CHECKSUM(value));
     if (CHECKSUM(value) == checksum)
@@ -104,30 +102,13 @@ uint32_t get_am2302_data()
     return 0xFFFFFFFF;
 }
 
-bool is_data_valid(AM2302_DATA value)
-{
-    uint8_t result = 0;
-    result = (uint8_t)((value.sensor_data.humidity & 0xFF) + ((value.sensor_data.humidity >> 8) & 0xFF) + (value.sensor_data.temperature & 0xFF) + ((value.sensor_data.temperature >> 8) & 0xFF));
-
-    printf("result = %x\n", result & 0xFF);
-    if (result != value.checksum)
-    {
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
 bool request_am2302_data()
 {
     volatile uint32_t value = {0};
     AM2302_PIN = LOW;
     delay_ms(20);
     AM2302_PIN = HIGH;
-    delay_13us();
-    delay_13us();
-    delay_13us();
-    delay_13us();
+    delay_52us();
     if (AM2302_PIN == HIGH)
     {
         printf("AM2302 no response\n");
@@ -138,9 +119,15 @@ bool request_am2302_data()
         ;
     while (AM2302_PIN == HIGH)
         ;
-    value = get_am2302_data();
+    if ((value = get_am2302_data()) == 0xFFFFFFFF)
+    {
+        printf("Checksum Wrong!\n");
+        return FALSE;
+    }
 
-    printf("AM2302 data = 0x%llX\n", value);
+    printf("    Humidity = %.1f %%\n", (float)(value >> 16) / 10);
+    printf("    Temperature = %.1f Celsius\n", (float)(value & 0xFFFF) / 10);
+    return TRUE;
 }
 
 void main()
@@ -148,7 +135,7 @@ void main()
     init_uart();
     while (TRUE)
     {
-        delay_ms(4000);
+        delay_ms(2000);
         request_am2302_data();
     }
     // stop();

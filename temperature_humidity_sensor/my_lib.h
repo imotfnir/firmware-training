@@ -1,6 +1,10 @@
 #ifndef _MY_LIB_H_
 #define _MY_LIB_H_
 
+#include <regx51.h>
+
+#include <stdio.h>
+
 #define TRUE 1
 #define FALSE 0
 #define CYCLE_PER_MS 921 // 1ms / (12 / 11.0592MHz) = 921.6
@@ -24,10 +28,10 @@ typedef struct
     int16_t temperature;
 } RH_TEMP;
 
-typedef struct
+typedef union
 {
     RH_TEMP sensor_data;
-    uint8_t checksum;
+    uint8_t raw_data;
 } AM2302_DATA;
 
 #endif // _MY_LIB_H_
