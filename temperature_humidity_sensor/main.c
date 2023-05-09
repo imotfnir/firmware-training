@@ -1,6 +1,7 @@
 #include "my_lib.h"
-#include <regx51.h>
 
+#include <regx51.h>
+#include <limits.h>
 #include <stdio.h>
 
 void delay_22us() // 21 clock cycle
@@ -44,18 +45,13 @@ void init_uart()
     TMOD = (TMOD & ~T1_MASK_) | (T1_M1_); // TMOD: timer 1 as timer, mode 2, 8-bit reload, disable INT
     SM0 = 0;                              // SCON: SM0 = 0, SM1 = 1 -> mode1
     SM1 = 1;                              // SCON: serial port mode 1
+    REN = 1;                              // Enable receive mode
     TH1 = 0xFD;                           // Set baud rate, TH1 = 0x100 - 2^SMOD * F_osc / (32 * 12 * Bard rate)
     TR1 = 1;                              // Trun-on timer 1
-    REN = 1;                              // Enable revicer mode
     ES = 1;                               // Enable UART interrupt
     ET1 = 1;                              // Enable timer 1 interrupt
+    EA = 1;                               // Enable Global Interrupt bit
     TI = 1;                               // UART ready
-}
-
-void stop()
-{
-    while (TRUE)
-        ;
 }
 
 uint32_t get_am2302_data()
@@ -83,7 +79,7 @@ uint32_t get_am2302_data()
         checksum <<= 1;           //  3 clock cycle
         while (AM2302_PIN == LOW) // Sensor pulls low 50us
             ;
-        delay_29us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
+        delay_22us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
         if (AM2302_PIN == HIGH)
         {
             checksum |= 1; //  2 clock cycle
@@ -119,7 +115,7 @@ bool request_am2302_data()
         ;
     while (AM2302_PIN == HIGH)
         ;
-    if ((value = get_am2302_data()) == 0xFFFFFFFF)
+    if ((value = get_am2302_data()) == ULONG_MAX)
     {
         printf("Checksum Wrong!\n");
         return FALSE;
@@ -130,14 +126,21 @@ bool request_am2302_data()
     return TRUE;
 }
 
+void serial_isr() interrupt 4 using 0
+{
+    if (RI == 1)
+    {
+        RI = 0; // Clear the Receive interrupt flag
+        printf("%c", SBUF);
+        request_am2302_data();
+    }
+}
+
 void main()
 {
     init_uart();
     while (TRUE)
     {
-        delay_ms(2000);
-        request_am2302_data();
     }
-    // stop();
     return;
 }
