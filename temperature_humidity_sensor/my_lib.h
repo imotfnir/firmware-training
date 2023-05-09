@@ -3,11 +3,12 @@
 
 #define TRUE 1
 #define FALSE 0
-
 #define CYCLE_PER_MS 921 // 1ms / (12 / 11.0592MHz) = 921.6
 #define AM2302_PIN P2_0
 #define HIGH 1
 #define LOW 0
+
+#define CHECKSUM(x) ((((x)&0xFF) + ((x) >> 8) + ((x) >> 16) + ((x) >> 24)) & 0xFF)
 
 typedef int bool;
 typedef char int8_t;
@@ -19,8 +20,8 @@ typedef unsigned long uint32_t;
 
 typedef struct
 {
-    uint16_t humidity;
-    uint16_t temperature;
+    int16_t humidity;
+    int16_t temperature;
 } RH_TEMP;
 
 typedef struct
