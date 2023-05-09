@@ -130,7 +130,7 @@ void serial_isr() interrupt 4 using 0
 {
     if (RI == 1)
     {
-        RI = 0; // Clear the Receive interrupt flag
+        RI = 0; // Clear the receive interrupt flag
         printf("%c", SBUF);
         request_am2302_data();
     }
@@ -139,8 +139,7 @@ void serial_isr() interrupt 4 using 0
 void main()
 {
     init_uart();
-    while (TRUE)
-    {
-    }
+    while (TRUE) // Waiting for UART receive interrupt
+        ;
     return;
 }
