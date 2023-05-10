@@ -79,7 +79,7 @@ uint32_t get_am2302_data()
         checksum <<= 1;           //  3 clock cycle
         while (AM2302_PIN == LOW) // Sensor pulls low 50us
             ;
-        delay_22us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
+        delay_29us(); // 28us < Sensor pull high <70us, output 1, otherwise output 0
         if (AM2302_PIN == HIGH)
         {
             checksum |= 1; //  2 clock cycle
@@ -101,6 +101,7 @@ uint32_t get_am2302_data()
 bool request_am2302_data()
 {
     volatile uint32_t value = {0};
+    delay_ms(2000);
     AM2302_PIN = LOW;
     delay_ms(20);
     AM2302_PIN = HIGH;
@@ -132,7 +133,12 @@ void serial_isr() interrupt 4 using 0
     {
         RI = 0; // Clear the receive interrupt flag
         printf("%c", SBUF);
-        request_am2302_data();
+        if (request_am2302_data())
+            return;
+        if (request_am2302_data())
+            return;
+        if (request_am2302_data())
+            return;
     }
 }
 
