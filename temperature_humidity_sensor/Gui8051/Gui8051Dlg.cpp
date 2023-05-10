@@ -158,11 +158,13 @@ void CGui8051Dlg::OnBnClickedOk()
 	// variables used with the com port
 	HANDLE hComm;
 	CString m_sComPort;
-	char strBuffer[0x100];
+	char strBuffer[0x100] = { 0 };
 	DCB m_dcb;
 	DWORD iBytesRead;
 	BOOL status;
 	COMMTIMEOUTS timeouts = {0};
+	CStatic* pStatic = (CStatic*)GetDlgItem(IDC_STATIC);
+
 
 	m_sComPort = "Com5";
 
@@ -186,7 +188,7 @@ void CGui8051Dlg::OnBnClickedOk()
 		return;
 	}
 
-	SetupComm(hComm, 0x80, 0x80); // set buffer sizes
+	SetupComm(hComm, 0x200, 0x200); // set buffer sizes
 
 	status = GetCommState(hComm, &m_dcb);
 	if (status == FALSE)
@@ -213,9 +215,9 @@ void CGui8051Dlg::OnBnClickedOk()
 	TRACE(_T("StopBits = %d\n", m_dcb.StopBits));
 	TRACE(_T("fAbortOnError = %d\n", m_dcb.fAbortOnError));
 
-	timeouts.ReadIntervalTimeout = 100;
+	timeouts.ReadIntervalTimeout = 50;
 	timeouts.ReadTotalTimeoutConstant = 50;
-	timeouts.ReadTotalTimeoutMultiplier = 1000;
+	timeouts.ReadTotalTimeoutMultiplier = 10;
 	timeouts.WriteTotalTimeoutConstant = 50;
 	timeouts.WriteTotalTimeoutMultiplier = 10;
 	if (SetCommTimeouts(hComm, &timeouts) == 0)
@@ -223,16 +225,23 @@ void CGui8051Dlg::OnBnClickedOk()
 		TRACE("Error setting timeouts\n");
 		goto __fail;
 	}
-	strBuffer[0] = ' ';
-	if (!WriteFile(hComm, strBuffer, sizeof(strBuffer), &iBytesRead, NULL))
+	strBuffer[0] = 'a';
+	if (!WriteFile(hComm, strBuffer, 1, &iBytesRead, NULL))
 	{
 		TRACE(_T("Write com port fail\n"));
 	}
-	if (!ReadFile(hComm, strBuffer, sizeof(strBuffer), &iBytesRead, NULL))
-	{
-		TRACE(_T("Read com port fail\n"));
-	}
-	TRACE(strBuffer);
+	do {
+		if (!ReadFile(hComm, strBuffer, sizeof(strBuffer), &iBytesRead, NULL))
+		{
+			TRACE(_T("Read com port fail\n"));
+		}
+		//TRACE((CString)strBuffer);
+		int nLength = MultiByteToWideChar(CP_ACP, 0, strBuffer, -1, NULL, 0);
+		TCHAR* szBuffer = new TCHAR[nLength];
+		MultiByteToWideChar(CP_ACP, 0, strBuffer, -1, szBuffer, nLength);
+		pStatic->SetWindowText(szBuffer);
+	} while (iBytesRead > 0);
+
 
 
 __fail:

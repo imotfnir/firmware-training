@@ -132,7 +132,7 @@ void serial_isr() interrupt 4 using 0
     if (RI == 1)
     {
         RI = 0; // Clear the receive interrupt flag
-        printf("%c", SBUF);
+        delay_ms(20);
         if (request_am2302_data())
             return;
         if (request_am2302_data())
