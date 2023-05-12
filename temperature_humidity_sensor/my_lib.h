@@ -8,7 +8,7 @@
 #define TRUE 1
 #define FALSE 0
 #define CYCLE_PER_MS 921 // 1ms / (12 / 11.0592MHz) = 921.6
-#define AM2302_PIN P2_0
+#define AM2302_PIN P0_0
 #define HIGH 1
 #define LOW 0
 

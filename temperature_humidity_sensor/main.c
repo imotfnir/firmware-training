@@ -88,9 +88,9 @@ uint32_t get_am2302_data()
         }
     }
 
-    printf("raw data = 0x%llX, ", value);
-    printf("get checksum = 0x%X, ", (int16_t)checksum);
-    printf("cal checksum = 0x%X, \n", (int16_t)CHECKSUM(value));
+    // printf("raw data = 0x%llX, ", value);
+    // printf("get checksum = 0x%X, ", (int16_t)checksum);
+    // printf("cal checksum = 0x%X, \n", (int16_t)CHECKSUM(value));
     if (CHECKSUM(value) == checksum)
     {
         return value;
